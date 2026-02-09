@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
-import { Product, User, AppConfig, Transaction, SocialChannel } from '../types';
-import TerritoryExplorer from './TerritoryExplorer';
-import { marketSearch, generateViralSocialBlast } from '../geminiService';
+import { Product, User, AppConfig, Transaction, SocialChannel } from '../types.ts';
+import TerritoryExplorer from './TerritoryExplorer.tsx';
+import { marketSearch, generateViralSocialBlast } from '../geminiService.ts';
 
 interface AdminPanelProps {
   config: AppConfig;

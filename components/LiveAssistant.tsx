@@ -1,7 +1,6 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
-import { decodeAudio, decodeAudioData, encodeAudio } from '../geminiService';
+import { decodeAudio, decodeAudioData, encodeAudio } from '../geminiService.ts';
 
 interface LiveAssistantProps {
   onClose: () => void;

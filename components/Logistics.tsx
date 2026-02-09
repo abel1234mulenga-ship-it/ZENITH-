@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { fetchLogisticsIntel } from '../geminiService';
+import { fetchLogisticsIntel } from '../geminiService.ts';
 
 const Logistics: React.FC = () => {
   const [vehicle, setVehicle] = useState('cargo');
@@ -186,6 +185,7 @@ const Logistics: React.FC = () => {
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-6 shadow-sm transition-colors ${
                       vehicle === v.id ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'
                     }`}>
+                      {/* FIX: Removed malformed string concatenation and corrected JSX for the icon tag */}
                       <i className={`fas ${v.icon} text-2xl`}></i>
                     </div>
                     <div className="flex-grow text-left">
