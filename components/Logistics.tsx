@@ -2,128 +2,154 @@
 import React, { useState, useEffect } from 'react';
 
 const Logistics: React.FC = () => {
-  const [vehicle, setVehicle] = useState('van');
-  const [activeTab, setActiveTab] = useState<'request' | 'live'>('request');
-  const [livePos, setLivePos] = useState({ lat: -15.4167, lng: 28.2833 }); // Lusaka center
+  const [vehicle, setVehicle] = useState('cargo');
+  const [step, setStep] = useState<'selection' | 'tracking'>('selection');
+  const [eta, setEta] = useState(12);
 
-  useEffect(() => {
-    if (activeTab === 'live') {
-      const interval = setInterval(() => {
-        setLivePos(prev => ({
-          lat: prev.lat + (Math.random() - 0.5) * 0.001,
-          lng: prev.lng + (Math.random() - 0.5) * 0.001
-        }));
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [activeTab]);
-
-  const vehicles = [
-    { id: 'courier', name: 'Zambia Courier', icon: 'fa-motorcycle', price: '45.00', time: '12 min' },
-    { id: 'van', name: 'Zambia Cargo', icon: 'fa-truck-front', price: '185.00', time: '25 min' },
-    { id: 'truck', name: 'Heavy Haul (ZM)', icon: 'fa-truck-moving', price: '450.00', time: '40 min' }
+  const hubs = [
+    { name: 'Lusaka Soweto Hub', city: 'Lusaka' },
+    { name: 'Copperbelt Industrial Park', city: 'Ndola' },
+    { name: 'Livingstone Logistics Point', city: 'Livingstone' }
   ];
 
+  const vehicles = [
+    { id: 'courier', name: 'Rapid Courier', icon: 'fa-motorcycle', price: '45.00', desc: 'Documents & Small Packs' },
+    { id: 'cargo', name: 'Zambia Cargo Van', icon: 'fa-truck-front', price: '185.00', desc: 'Furniture & Multi-box delivery' },
+    { id: 'heavy', name: 'Heavy Haul 30T', icon: 'fa-truck-moving', price: '2,450.00', desc: 'Mining gear & Machinery' }
+  ];
+
+  useEffect(() => {
+    if (step === 'tracking') {
+      const interval = setInterval(() => {
+        setEta(prev => Math.max(0, prev - 1));
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [step]);
+
   return (
-    <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-12rem)] animate-in fade-in duration-500">
-      {/* Zambian Integrated Map */}
-      <div className="flex-grow bg-emerald-50 rounded-[2.5rem] overflow-hidden relative border-4 border-white shadow-2xl">
+    <div className="flex flex-col lg:flex-row gap-10 h-[calc(100vh-12rem)] animate-in fade-in duration-700">
+      {/* Map visualization - Zambian Themed */}
+      <div className="flex-grow bg-emerald-50 rounded-[4rem] border-8 border-white shadow-2xl overflow-hidden relative group">
         <img 
           src="https://picsum.photos/seed/zambia-map/1400/1000" 
-          className="w-full h-full object-cover opacity-60 grayscale-[0.5]" 
-          alt="Zambia Logistics Map"
+          className="w-full h-full object-cover opacity-60 grayscale-[0.2] group-hover:scale-105 transition-transform duration-[4000ms]" 
+          alt="Map" 
         />
-        <div className="absolute inset-0 bg-emerald-900/10 backdrop-soft-blur"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/20 to-transparent"></div>
         
-        {/* Real-time Ticker */}
-        <div className="absolute top-6 left-6 right-6">
-           <div className="bg-white/90 backdrop-blur-xl p-6 rounded-[2rem] shadow-2xl border border-white flex flex-col md:flex-row items-center gap-6">
-              <div className="flex-grow w-full md:w-auto">
-                 <div className="flex items-center gap-3 mb-2">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping"></div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Active Ops: Lusaka - Hub 1</span>
-                 </div>
-                 <div className="flex items-center gap-4">
-                    <div className="text-xs font-black text-gray-900 bg-gray-100 px-3 py-1 rounded-lg">LAT: {livePos.lat.toFixed(4)}</div>
-                    <div className="text-xs font-black text-gray-900 bg-gray-100 px-3 py-1 rounded-lg">LNG: {livePos.lng.toFixed(4)}</div>
-                 </div>
+        {/* Floating Ticker */}
+        <div className="absolute top-10 left-10 right-10 flex flex-col md:flex-row gap-4 items-center justify-between">
+           <div className="bg-white/90 backdrop-blur-xl p-6 rounded-[2.5rem] shadow-2xl border border-white flex items-center gap-6">
+              <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-lg animate-pulse">
+                <i className="fas fa-satellite-dish"></i>
               </div>
-              <div className="h-px md:h-8 w-full md:w-px bg-gray-200"></div>
-              <div className="flex gap-2">
-                 <button 
-                  onClick={() => setActiveTab('request')}
-                  className={`px-6 py-2 rounded-xl text-xs font-black transition ${activeTab === 'request' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-gray-50 text-gray-400'}`}
-                 >
-                   Request
-                 </button>
-                 <button 
-                  onClick={() => setActiveTab('live')}
-                  className={`px-6 py-2 rounded-xl text-xs font-black transition ${activeTab === 'live' ? 'bg-emerald-600 text-white shadow-lg' : 'bg-gray-50 text-gray-400'}`}
-                 >
-                   Live Radar
-                 </button>
+              <div>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">Live Ops Zambia</p>
+                <p className="text-sm font-black text-gray-900">42 Vehicles active in Central Province</p>
               </div>
+           </div>
+           
+           <div className="flex bg-white/90 backdrop-blur-xl p-2 rounded-full shadow-2xl border border-white">
+              {['Lusaka', 'Ndola', 'Kitwe'].map(city => (
+                <button key={city} className="px-6 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-emerald-600 transition">{city}</button>
+              ))}
            </div>
         </div>
 
-        {/* Live Tracking Marker */}
-        <div className="absolute transition-all duration-1000" style={{ top: '55%', left: '48%' }}>
-           <div className="flex flex-col items-center group">
-              <div className="bg-white p-2 rounded-xl shadow-2xl border border-emerald-100 mb-2 scale-0 group-hover:scale-100 transition-transform origin-bottom">
-                 <p className="text-[8px] font-black text-emerald-900">VAN-ZM-482</p>
+        {/* Dynamic Tracking Pin */}
+        <div className="absolute transition-all duration-1000" style={{ top: '60%', left: '50%' }}>
+           <div className="flex flex-col items-center">
+              <div className="bg-white p-3 rounded-2xl shadow-2xl border border-emerald-100 mb-2 whitespace-nowrap animate-bounce">
+                <p className="text-[8px] font-black text-emerald-900 uppercase">ZM-TRUCK-882</p>
+                <p className="text-[10px] font-bold text-gray-500">In Transit (12km/h)</p>
               </div>
-              <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-white shadow-2xl animate-pulse ring-4 ring-white">
-                <i className="fas fa-truck-front"></i>
+              <div className="w-16 h-16 bg-emerald-600 rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl border-4 border-white ring-8 ring-emerald-500/10">
+                <i className="fas fa-truck-moving text-2xl"></i>
               </div>
            </div>
         </div>
       </div>
 
-      {/* Control Panel */}
-      <div className="w-full lg:w-[400px] bg-white rounded-[2.5rem] p-8 shadow-2xl border border-gray-100 flex flex-col gap-8">
+      {/* Control Module */}
+      <div className="w-full lg:w-[450px] bg-white rounded-[4rem] p-10 shadow-2xl border border-gray-100 flex flex-col gap-10">
         <div>
-          <h2 className="text-3xl font-black text-gray-900 tracking-tight">Logistics ZM</h2>
-          <p className="text-sm text-gray-500 font-medium">Official Logistics Hub for Zenith Zambia.</p>
+          <h2 className="text-4xl font-black text-gray-900 tracking-tight leading-none">Logistics ZM</h2>
+          <p className="text-gray-500 font-bold mt-4 flex items-center gap-3">
+            Official partner for Zambian commercial transport.
+          </p>
         </div>
 
-        <div className="flex flex-col gap-4 overflow-y-auto scrollbar-hide flex-grow">
-          {vehicles.map((v) => (
-            <button 
-              key={v.id}
-              onClick={() => setVehicle(v.id)}
-              className={`flex items-center p-5 rounded-[1.5rem] border-2 transition-all ${
-                vehicle === v.id ? 'bg-emerald-600 border-emerald-600 shadow-2xl scale-[1.02]' : 'bg-gray-50 border-transparent hover:border-emerald-100'
-              }`}
-            >
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-4 shadow-sm transition-colors ${
-                vehicle === v.id ? 'bg-white/10 text-white' : 'bg-white text-emerald-600'
-              }`}>
-                <i className={`fas ${v.icon} text-2xl`}></i>
-              </div>
-              <div className="flex-grow text-left">
-                <p className={`font-black text-sm uppercase tracking-wider ${vehicle === v.id ? 'text-white' : 'text-gray-900'}`}>{v.name}</p>
-                <p className={`text-[10px] font-bold ${vehicle === v.id ? 'text-emerald-100' : 'text-gray-400'}`}>{v.time} arrival</p>
-              </div>
-              <div className="text-right">
-                <p className={`text-[10px] font-black uppercase ${vehicle === v.id ? 'text-emerald-100' : 'text-gray-400'}`}>Est.</p>
-                <p className={`font-black text-xl ${vehicle === v.id ? 'text-white' : 'text-emerald-900'}`}>ZMW {v.price}</p>
-              </div>
-            </button>
-          ))}
-        </div>
+        {step === 'selection' ? (
+          <>
+            <div className="flex-grow space-y-4 overflow-y-auto scrollbar-hide">
+              {vehicles.map(v => (
+                <button 
+                  key={v.id}
+                  onClick={() => setVehicle(v.id)}
+                  className={`w-full flex items-center p-6 rounded-[2rem] border-4 transition-all ${
+                    vehicle === v.id ? 'bg-emerald-600 border-emerald-600 shadow-2xl scale-[1.02]' : 'bg-gray-50 border-transparent hover:border-emerald-100'
+                  }`}
+                >
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mr-6 shadow-sm transition-colors ${
+                    vehicle === v.id ? 'bg-white/20 text-white' : 'bg-white text-emerald-600'
+                  }`}>
+                    <i className={`fas ${v.icon} text-2xl`}></i>
+                  </div>
+                  <div className="flex-grow text-left">
+                    <p className={`font-black uppercase tracking-wider text-xs ${vehicle === v.id ? 'text-white' : 'text-gray-900'}`}>{v.name}</p>
+                    <p className={`text-[10px] font-bold mt-1 ${vehicle === v.id ? 'text-emerald-100' : 'text-gray-400'}`}>{v.desc}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-xl font-black leading-none ${vehicle === v.id ? 'text-white' : 'text-emerald-900'}`}>ZMW {v.price}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
 
-        <div className="mt-auto space-y-4">
-          <div className="p-4 bg-emerald-50 rounded-2xl flex items-center gap-3">
-             <i className="fas fa-tag text-emerald-600"></i>
-             <p className="text-[10px] font-black text-emerald-900 uppercase">Vendor Discount Applied (-5%)</p>
+            <div className="space-y-6">
+               <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100">
+                  <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest mb-2 flex items-center gap-2">
+                    <i className="fas fa-shield-check"></i> Transit Insurance
+                  </p>
+                  <p className="text-xs text-emerald-600/80 font-bold italic leading-relaxed">Coverage up to ZMW 25,000 included for all intra-province hauls.</p>
+               </div>
+               <button 
+                onClick={() => setStep('tracking')}
+                className="w-full py-6 bg-gray-900 text-white rounded-[2.5rem] font-black text-xl hover:bg-emerald-600 transition shadow-2xl flex items-center justify-center gap-4 group"
+               >
+                 <span>Confirm Route</span>
+                 <i className="fas fa-arrow-right text-sm group-hover:translate-x-2 transition-transform"></i>
+               </button>
+            </div>
+          </>
+        ) : (
+          <div className="flex-grow flex flex-col justify-between py-10 animate-in slide-in-from-right-10">
+             <div className="text-center space-y-6">
+                <div className="w-32 h-32 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-10 border-4 border-emerald-100">
+                  <p className="text-4xl font-black text-emerald-600">{eta}</p>
+                </div>
+                <h3 className="text-3xl font-black text-gray-900">Vehicle Approaching</h3>
+                <p className="text-gray-500 font-bold uppercase tracking-widest text-[10px]">Merchant Pickup in Lusaka Hub</p>
+             </div>
+             
+             <div className="bg-gray-50 p-8 rounded-[2rem] border border-gray-100 flex items-center gap-6">
+                <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center text-emerald-600"><i className="fas fa-user-shield text-2xl"></i></div>
+                <div>
+                  <p className="font-black text-gray-900">Mutale Phiri</p>
+                  <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Verified 5-Star Driver</p>
+                </div>
+                <button className="ml-auto w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg text-emerald-600"><i className="fas fa-phone"></i></button>
+             </div>
+
+             <button 
+              onClick={() => setStep('selection')}
+              className="w-full py-6 bg-red-50 text-red-600 rounded-[2.5rem] font-black text-xs uppercase tracking-[0.3em] hover:bg-red-600 hover:text-white transition"
+             >
+               Cancel Request
+             </button>
           </div>
-          <button 
-            className="group w-full py-6 bg-gray-900 text-white rounded-[2rem] font-black text-xl hover:bg-emerald-600 transition shadow-2xl flex items-center justify-center gap-4"
-          >
-            <span>Confirm Request</span>
-            <i className="fas fa-arrow-right text-sm group-hover:translate-x-2 transition-transform"></i>
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );

@@ -1,245 +1,183 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, UserTier } from '../types';
-import { fastResponse } from '../geminiService';
+import { User, AppConfig } from '../types';
 
 interface AuthPageProps {
   onAuth: (user: User) => void;
+  config: AppConfig;
 }
 
-const AuthPage: React.FC<AuthPageProps> = ({ onAuth }) => {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [method, setMethod] = useState<'email' | 'phone' | 'google'>('email');
+const AuthPage: React.FC<AuthPageProps> = ({ onAuth, config }) => {
+  const [mode, setMode] = useState<'signin' | 'signup' | 'admin'>('signin');
   const [formData, setFormData] = useState({ 
     email: '', 
     password: '', 
-    phone: '', 
     name: '', 
     businessType: 'General Trade' 
   });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processStep, setProcessStep] = useState(0);
+  const [step, setStep] = useState(0);
 
-  const processingSteps = [
-    "Initializing secure session...",
-    "Verifying credentials...",
-    "Connecting to Zambian Trade Registry...",
-    "Setting up your Merchant Wallet...",
-    "AI-optimizing your market visibility...",
-    "Finalizing your Zenith ZM profile..."
+  const steps = [
+    "Establishing Encrypted Bridge...",
+    "Authenticating with Zambian Trade Registry...",
+    "Verifying Merchant Credentials...",
+    "Allocating Cloud Resources...",
+    "Synchronizing Market Context..."
+  ];
+
+  const adminSteps = [
+    "Initializing Owner Protocol...",
+    "Decrypting Administrator Vault...",
+    "Synchronizing Platform Governance...",
+    `Authenticating ${config.ownerName}...`,
+    "Opening Master Control Center..."
   ];
 
   useEffect(() => {
-    let interval: any;
-    if (isProcessing && processStep < processingSteps.length) {
-      interval = setInterval(() => {
-        setProcessStep(prev => prev + 1);
-      }, 1800);
-    } else if (isProcessing && processStep === processingSteps.length) {
-      completeAuth();
+    if (isProcessing) {
+      const activeSteps = mode === 'admin' ? adminSteps : steps;
+      const interval = setInterval(() => {
+        setStep(prev => {
+          if (prev >= activeSteps.length - 1) {
+            clearInterval(interval);
+            completeAuth();
+            return prev;
+          }
+          return prev + 1;
+        });
+      }, 800);
+      return () => clearInterval(interval);
     }
-    return () => clearInterval(interval);
-  }, [isProcessing, processStep]);
+  }, [isProcessing]);
 
-  const completeAuth = async () => {
-    const prompt = `Generate a 1-sentence welcome tip for a new Zambian business owner named ${formData.name || 'User'} who is starting a ${formData.businessType} business.`;
-    const aiTip = await fastResponse(prompt);
-
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: formData.name || (method === 'email' ? formData.email.split('@')[0] : 'Zambian Trader'),
-      email: formData.email || 'user@zenith.zm',
-      phone: formData.phone,
-      role: 'user',
-      tier: 'free', // New users start as free
-      businessType: formData.businessType,
-      walletBalance: 0, // Initial balance
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.email || formData.phone || 'seed'}`
-    };
+  const completeAuth = () => {
+    const isAdminMode = mode === 'admin';
+    const isOwnerEmail = formData.email.toLowerCase() === 'owner@zenith.zm';
     
-    console.log("AI Market Tip:", aiTip);
+    const mockUser: User = {
+      id: (isAdminMode || isOwnerEmail) ? 'admin' : Math.random().toString(36).substr(2, 9),
+      name: (isAdminMode || isOwnerEmail) ? (config.ownerName || 'Platform Owner') : (formData.name || 'Zambian Merchant'),
+      email: isAdminMode ? 'owner@zenith.zm' : formData.email,
+      passwordHash: config.adminPasswordHash,
+      role: (isAdminMode || isOwnerEmail) ? 'admin' : 'vendor',
+      tier: (isAdminMode || isOwnerEmail) ? 'enterprise' : 'free',
+      walletBalance: (isAdminMode || isOwnerEmail) ? 1245800 : 0,
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${isAdminMode ? 'admin-abel' : formData.email}`,
+      isSuspended: false,
+      joinedAt: Date.now()
+    };
     onAuth(mockUser);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'signup') {
-      setIsProcessing(true);
-      setProcessStep(0);
-    } else {
-      completeAuth();
-    }
+    setIsProcessing(true);
   };
 
-  const socialLogin = () => {
-    setIsProcessing(true);
-    setProcessStep(2);
-  };
+  const currentSteps = mode === 'admin' ? adminSteps : steps;
 
   if (isProcessing) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 animate-in fade-in duration-500">
-        <div className="w-full max-w-sm text-center space-y-12">
-          <div className="relative mx-auto w-32 h-32">
-            <div className="absolute inset-0 border-4 border-gray-100 rounded-full"></div>
-            <div 
-              className="absolute inset-0 border-4 border-emerald-600 rounded-full border-t-transparent animate-spin"
-              style={{ animationDuration: '1.5s' }}
-            ></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <i className="fas fa-shield-halved text-emerald-600 text-3xl animate-pulse"></i>
+      <div className={`min-h-screen flex flex-col items-center justify-center p-8 animate-in fade-in duration-500 ${mode === 'admin' ? 'bg-gray-950 text-emerald-400' : 'bg-white text-gray-900'}`}>
+         <div className="w-full max-sm text-center space-y-12">
+            <div className="relative mx-auto w-36 h-36">
+               <div className={`absolute inset-0 border-4 rounded-full ${mode === 'admin' ? 'border-emerald-900' : 'border-emerald-50'}`}></div>
+               <div className={`absolute inset-0 border-4 rounded-full border-t-transparent animate-spin ${mode === 'admin' ? 'border-emerald-400' : 'border-emerald-600'}`}></div>
+               <div className="absolute inset-0 flex items-center justify-center">
+                  <i className={`fas ${mode === 'admin' ? 'fa-crown text-emerald-400' : 'fa-shield-halved text-emerald-600'} text-4xl animate-pulse`}></i>
+               </div>
             </div>
-          </div>
-
-          <div className="space-y-6">
-            <h2 className="text-2xl font-black text-gray-900 tracking-tight">Processing Information</h2>
-            <div className="space-y-3 text-left">
-              {processingSteps.map((step, idx) => (
-                <div 
-                  key={idx} 
-                  className={`flex items-center gap-3 text-sm font-bold transition-all duration-500 ${
-                    idx < processStep ? 'text-emerald-600' : idx === processStep ? 'text-gray-900' : 'text-gray-200'
-                  }`}
-                >
-                  <i className={`fas ${idx < processStep ? 'fa-check-circle' : idx === processStep ? 'fa-circle-notch fa-spin' : 'fa-circle'} text-[10px]`}></i>
-                  <span>{step}</span>
-                </div>
-              ))}
+            <div className="space-y-4">
+               <h2 className={`text-2xl font-black uppercase tracking-tighter ${mode === 'admin' ? 'text-white' : 'text-gray-900'}`}>
+                  {mode === 'admin' ? 'OWNER AUTHENTICATION' : 'Securing Access'}
+               </h2>
+               <div className="space-y-3 text-left">
+                  {currentSteps.map((s, idx) => (
+                    <div key={idx} className={`flex items-center gap-3 text-[10px] font-black uppercase tracking-widest transition-all ${idx <= step ? (mode === 'admin' ? 'text-emerald-400' : 'text-emerald-600') : (mode === 'admin' ? 'text-gray-800' : 'text-gray-200')}`}>
+                       <i className={`fas ${idx < step ? 'fa-check-circle' : idx === step ? 'fa-circle-notch fa-spin' : 'fa-circle'}`}></i>
+                       <span>{s}</span>
+                    </div>
+                  ))}
+               </div>
             </div>
-          </div>
-
-          <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-100 animate-pulse">
-            <p className="text-[10px] font-black text-emerald-800 uppercase tracking-widest">
-              Securing {formData.name || 'Trader'}'s Business Environment
-            </p>
-          </div>
-        </div>
+         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-emerald-50 flex items-center justify-center p-6 relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-200/50 rounded-full blur-[100px]"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-orange-200/50 rounded-full blur-[100px]"></div>
+    <div className={`min-h-screen flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-1000 ${mode === 'admin' ? 'bg-black' : 'bg-emerald-50'}`}>
+      <div className={`absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full blur-[150px] transition-all duration-1000 ${mode === 'admin' ? 'bg-emerald-900/30' : 'bg-emerald-200/50'}`}></div>
+      <div className={`absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] rounded-full blur-[150px] transition-all duration-1000 ${mode === 'admin' ? 'bg-gray-900/50' : 'bg-orange-200/50'}`}></div>
 
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-2xl rounded-[3rem] shadow-2xl border border-white p-8 md:p-12 animate-in fade-in slide-in-from-bottom-8 duration-700 relative z-10">
-        <div className="text-center space-y-4 mb-10">
-          <div className="w-20 h-20 bg-emerald-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-2xl shadow-emerald-200 mb-6">
-            <i className="fas fa-bolt text-white text-4xl"></i>
-          </div>
-          <h1 className="text-3xl font-black text-emerald-900 tracking-tight">
-            {mode === 'signin' ? 'Welcome Back' : 'Join the Market'}
-          </h1>
-          <p className="text-gray-500 font-medium">Zambia's premier business engine.</p>
+      <div className={`w-full max-w-md backdrop-blur-3xl rounded-[4rem] shadow-2xl border p-12 md:p-16 animate-in slide-in-from-bottom-10 duration-700 relative z-10 transition-all duration-1000 ${
+        mode === 'admin' ? 'bg-gray-900/80 border-emerald-900/50' : 'bg-white/80 border-white'
+      }`}>
+        <div className="flex justify-center mb-10">
+           <div className={`p-1 rounded-2xl flex gap-1 transition-colors ${mode === 'admin' ? 'bg-black' : 'bg-emerald-100/50'}`}>
+              <button onClick={() => setMode('signin')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${mode !== 'admin' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}>Merchant</button>
+              <button onClick={() => setMode('admin')} className={`px-6 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${mode === 'admin' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50' : 'text-gray-400 hover:text-emerald-600'}`}>Owner</button>
+           </div>
         </div>
 
-        <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-8">
-          <button 
-            onClick={() => setMethod('email')}
-            className={`flex-grow py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${method === 'email' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}
-          >
-            Email
-          </button>
-          <button 
-            onClick={() => setMethod('phone')}
-            className={`flex-grow py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${method === 'phone' ? 'bg-white text-emerald-600 shadow-sm' : 'text-gray-400'}`}
-          >
-            Mobile
-          </button>
+        <div className="text-center mb-12">
+           <div className={`w-24 h-24 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-2xl mb-8 group hover:rotate-6 transition-all duration-700 ${mode === 'admin' ? 'bg-emerald-600 border border-emerald-400/30' : 'bg-emerald-600'}`}>
+             <i className={`fas ${mode === 'admin' ? 'fa-crown text-white' : 'fa-bolt text-white'} text-4xl`}></i>
+           </div>
+           <h1 className={`text-4xl font-black tracking-tighter leading-none mb-3 transition-colors ${mode === 'admin' ? 'text-white' : 'text-gray-900'}`}>
+             {mode === 'admin' ? 'GOD MODE' : 'ZENITH ZM'}
+           </h1>
+           <p className={`font-black uppercase tracking-[0.4em] text-[10px] ${mode === 'admin' ? 'text-emerald-500' : 'text-gray-400'}`}>
+             {mode === 'admin' ? config.ownerTitle : 'Official Merchant Portal'}
+           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {mode === 'signup' && (
-            <>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
-                <input 
-                  type="text" required placeholder="John Lungu"
-                  className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-sm"
-                  value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Industry Type</label>
-                <select 
-                  className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-sm appearance-none"
-                  value={formData.businessType} onChange={e => setFormData({...formData, businessType: e.target.value})}
-                >
-                  <option>Agriculture & Tools</option>
-                  <option>Construction Machinery</option>
-                  <option>Electronics Trade</option>
-                  <option>Logistics Services</option>
-                  <option>General Retailing</option>
-                </select>
-              </div>
-            </>
-          )}
+        <form onSubmit={handleSubmit} className="space-y-8">
+           {mode === 'signup' && (
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Business Identity</label>
+                <input required type="text" placeholder="e.g. Lungu Agri-Works" className="w-full bg-white border border-gray-100 rounded-3xl px-8 py-5 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-sm"
+                 value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+             </div>
+           )}
 
-          {method === 'email' ? (
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
-              <input 
-                type="email" required placeholder="name@zenith.zm"
-                className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-sm"
-                value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})}
-              />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Zambian Mobile Number</label>
-              <div className="flex items-center bg-white border border-gray-100 rounded-2xl px-6 py-4 focus-within:ring-4 focus-within:ring-emerald-100 transition shadow-sm">
-                <span className="text-gray-400 font-bold mr-3">+260</span>
-                <input 
-                  type="tel" required placeholder="977 000 000"
-                  className="bg-transparent outline-none w-full font-bold"
-                  value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})}
-                />
-              </div>
-            </div>
-          )}
+           {mode !== 'admin' ? (
+             <div className="space-y-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Merchant Email</label>
+                <input required type="email" placeholder="trade@zenith.zm" className="w-full bg-white border border-gray-100 rounded-3xl px-8 py-5 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-sm"
+                 value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+             </div>
+           ) : (
+             <div className="p-6 bg-emerald-950/30 border border-emerald-900/50 rounded-3xl mb-4 text-center">
+                <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Administrative Target</p>
+                <p className="text-sm font-black text-white">owner@zenith.zm</p>
+             </div>
+           )}
 
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Password</label>
-            <input 
-              type="password" required placeholder="••••••••"
-              className="w-full bg-white border border-gray-100 rounded-2xl px-6 py-4 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-sm"
-              value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})}
-            />
-          </div>
+           <div className="space-y-2">
+              <label className={`text-[10px] font-black uppercase tracking-widest ml-1 ${mode === 'admin' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                {mode === 'admin' ? 'Master Secret Key' : 'Security Secret'}
+              </label>
+              <input required type="password" placeholder="••••••••" className={`w-full rounded-3xl px-8 py-5 font-bold outline-none focus:ring-4 transition shadow-sm ${mode === 'admin' ? 'bg-black border-emerald-900 text-white focus:ring-emerald-900' : 'bg-white border-gray-100 focus:ring-emerald-100'}`}
+               value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+           </div>
 
-          <button 
-            type="submit"
-            className="w-full py-5 bg-emerald-600 text-white rounded-[1.5rem] font-black text-lg hover:bg-emerald-700 transition shadow-2xl shadow-emerald-200 flex items-center justify-center gap-3"
-          >
-            <span>{mode === 'signin' ? 'Verify & Enter' : 'Process My Account'}</span>
-            <i className={`fas ${mode === 'signin' ? 'fa-chevron-right' : 'fa-wand-magic-sparkles'} text-xs`}></i>
-          </button>
+           <button type="submit" className={`w-full py-6 rounded-[2rem] font-black text-xl transition-all shadow-2xl ${mode === 'admin' ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-emerald-900/40' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-200'}`}>
+              {mode === 'admin' ? 'Unlock Control' : (mode === 'signin' ? 'Unlock Platform' : 'Register Asset')}
+           </button>
         </form>
 
-        <div className="my-10 flex items-center gap-4">
-          <div className="flex-grow h-px bg-gray-100"></div>
-          <span className="text-[10px] font-black text-gray-300 uppercase tracking-widest">Instant Connect</span>
-          <div className="flex-grow h-px bg-gray-100"></div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4">
-          <button 
-            onClick={socialLogin}
-            className="w-full py-4 border border-gray-100 rounded-2xl flex items-center justify-center gap-3 font-bold text-gray-600 hover:bg-gray-50 transition"
-          >
-            <img src="https://www.gstatic.com/images/branding/product/1x/googleg_48dp.png" className="w-5 h-5" alt="google" />
-            <span>Google One-Tap</span>
-          </button>
-        </div>
-
-        <div className="mt-12 text-center">
-          <button 
-            onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-            className="text-sm font-bold text-emerald-600 hover:underline"
-          >
-            {mode === 'signin' ? "New Trader? Register Here" : "Already a Merchant? Sign In"}
-          </button>
+        <div className="mt-12 text-center space-y-4">
+           {mode !== 'admin' ? (
+             <button onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')} className="text-xs font-black uppercase tracking-widest text-emerald-600 hover:underline">{mode === 'signin' ? 'Create new Merchant account' : 'Return to sign in'}</button>
+           ) : (
+             <p className="text-[9px] font-black text-emerald-700 uppercase tracking-widest leading-relaxed">Administrator Login: Restricted to {config.ownerName}</p>
+           )}
+           <div className="pt-8 border-t border-gray-50/10">
+             <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${mode === 'admin' ? 'text-emerald-900' : 'text-gray-400'}`}>Platform Creator</p>
+             <p className={`text-[11px] font-black uppercase tracking-[0.3em] ${mode === 'admin' ? 'text-emerald-500' : 'text-emerald-900'}`}>{config.ownerName}</p>
+           </div>
         </div>
       </div>
     </div>

@@ -15,11 +15,13 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const nextStartTimeRef = useRef<number>(0);
   const sessionRef = useRef<any>(null);
+  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
 
   const startSession = async () => {
     setIsActive(true);
     setIsThinking(true);
     
+    // Always create a new AI instance right before connection for the latest keys
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     
     if (!audioContextRef.current) {
@@ -39,6 +41,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
             
             const source = inputContext.createMediaStreamSource(stream);
             const processor = inputContext.createScriptProcessor(4096, 1, 1);
+            scriptProcessorRef.current = processor;
             
             processor.onaudioprocess = (e) => {
               const input = e.inputBuffer.getChannelData(0);
@@ -71,11 +74,24 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
               source.start(nextStartTimeRef.current);
               nextStartTimeRef.current += buffer.duration;
             }
+
+            if (msg.serverContent?.interrupted) {
+               nextStartTimeRef.current = 0;
+            }
+          },
+          onerror: (err) => {
+            console.error("Live session error:", err);
+            setTranscript("System busy. Retrying connection...");
+            setIsThinking(false);
+          },
+          onclose: () => {
+            setIsActive(false);
+            setIsThinking(false);
           }
         },
         config: {
           responseModalities: [Modality.AUDIO],
-          systemInstruction: "You are the Zenith Super-App Assistant. You help users find tools, book heavy logistics vehicles, and manage their vendor accounts. Speak professionally and concisely.",
+          systemInstruction: "You are the Zenith Super-App Strategic Assistant. You help Zambian merchants grow their businesses. Be concise, professional, and strategic.",
           outputAudioTranscription: {}
         }
       });
@@ -84,20 +100,26 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
     } catch (err) {
       console.error(err);
       setIsActive(false);
+      setIsThinking(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6 bg-blue-950/80 backdrop-blur-2xl animate-in fade-in duration-300">
-      <div className="bg-white w-full max-w-lg rounded-[3rem] overflow-hidden shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 transition">
-          <i className="fas fa-times text-xl"></i>
-        </button>
+  const stopSession = () => {
+    sessionRef.current?.close();
+    scriptProcessorRef.current?.disconnect();
+    setIsActive(false);
+    setTranscript("Session archived.");
+  };
 
-        <div className="p-12 flex flex-col items-center text-center gap-12">
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-6 bg-blue-950/90 backdrop-blur-2xl animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-lg rounded-[4rem] overflow-hidden shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-8 right-8 text-gray-400 hover:text-gray-900 transition"><i className="fas fa-times text-2xl"></i></button>
+
+        <div className="p-16 flex flex-col items-center text-center gap-12">
           <div className="relative">
-            <div className={`w-48 h-48 rounded-full flex items-center justify-center transition-all duration-700 ${
-              isActive ? 'bg-blue-600 scale-110 shadow-[0_0_80px_rgba(37,99,235,0.4)]' : 'bg-gray-50 border border-gray-100'
+            <div className={`w-40 h-40 rounded-full flex items-center justify-center transition-all duration-700 ${
+              isActive ? 'bg-blue-600 shadow-[0_0_80px_rgba(37,99,235,0.4)]' : 'bg-gray-50 border border-gray-100'
             }`}>
               {isActive ? (
                 <div className="flex items-center gap-1">
@@ -109,47 +131,26 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
                 <i className="fas fa-microphone-lines text-5xl text-blue-600"></i>
               )}
             </div>
-            {isThinking && <div className="absolute inset-0 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>}
+            {isThinking && <div className="absolute inset-[-10px] border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>}
           </div>
 
           <div className="space-y-4">
-            <h2 className="text-3xl font-black text-gray-900">Zenith Voice</h2>
-            <p className="text-lg text-gray-500 font-medium italic min-h-[3rem]">"{transcript}"</p>
+            <h2 className="text-3xl font-black text-gray-900">Strategic Voice</h2>
+            <p className="text-lg text-gray-500 font-medium italic min-h-[4rem] leading-relaxed">"{transcript}"</p>
           </div>
 
           <div className="flex gap-4 w-full">
             {!isActive ? (
-              <button 
-                onClick={startSession}
-                className="flex-grow py-5 bg-blue-600 text-white rounded-3xl font-black text-xl hover:bg-blue-700 transition shadow-2xl"
-              >
-                Begin Conversation
-              </button>
+              <button onClick={startSession} className="flex-grow py-6 bg-blue-600 text-white rounded-[2rem] font-black text-xl hover:bg-blue-700 transition shadow-2xl">Begin Command</button>
             ) : (
-              <button 
-                onClick={() => {
-                  sessionRef.current?.close();
-                  setIsActive(false);
-                  setTranscript("Session ended.");
-                }}
-                className="flex-grow py-5 bg-red-50 text-red-600 rounded-3xl font-black text-xl hover:bg-red-100 transition"
-              >
-                Stop Listening
-              </button>
+              <button onClick={stopSession} className="flex-grow py-6 bg-red-50 text-red-600 rounded-[2rem] font-black text-xl hover:bg-red-100 transition">End Session</button>
             )}
-          </div>
-          
-          <div className="text-[10px] text-gray-400 font-black uppercase tracking-[0.3em]">
-            Real-time Multimodal Engine Active
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes wave {
-          0%, 100% { height: 1.5rem; }
-          50% { height: 4rem; }
-        }
+        @keyframes wave { 0%, 100% { height: 1.5rem; } 50% { height: 4rem; } }
         .animate-wave { animation: wave 1s infinite ease-in-out; }
       `}</style>
     </div>

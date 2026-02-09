@@ -6,61 +6,96 @@ export interface Product {
   price: number;
   description: string;
   imageUrl: string;
-  videoUrl?: string;
   ownerId: string;
   location: {
     lat: number;
     lng: number;
     address: string;
   };
-  isFeatured?: boolean;
-  isBoosted?: boolean;
-  isPromoted?: boolean; // New: Internal platform promotion
-  boostExpiry?: string;
-  socialAdCopy?: string;
-  clicks?: number;
-  sales?: number;
+  contactInfo: {
+    phone?: string;
+    whatsapp?: string;
+    facebook?: string;
+    instagram?: string;
+    messenger?: string;
+  };
+  status: 'pending' | 'approved' | 'rejected' | 'suspended';
+  isFeatured: boolean;
+  isPromoted: boolean;
+  clicks: number;
+  sales: number;
+  createdAt: number;
 }
 
+export type UserRole = 'user' | 'vendor' | 'admin';
 export type UserTier = 'free' | 'pro' | 'enterprise';
 
 export interface User {
   id: string;
   name: string;
   email: string;
-  phone?: string;
-  role: 'user' | 'admin' | 'vendor';
+  passwordHash: string;
+  role: UserRole;
   tier: UserTier;
-  avatar?: string;
-  businessType?: string;
   walletBalance: number;
-  isSuspended?: boolean;
+  isSuspended: boolean;
+  avatar: string;
+  joinedAt: number;
+  businessType?: string;
+}
+
+export interface Transaction {
+  id: string;
+  userId: string;
+  amount: number;
+  type: 'listing_fee' | 'promotion' | 'commission' | 'payout';
+  timestamp: number;
+  status: 'completed' | 'pending';
+}
+
+export interface SocialChannel {
+  id: string;
+  name: string;
+  platform: string;
+  url: string;
+  status: 'active' | 'inactive';
+  reach: string;
+}
+
+export interface ZambianProvince {
+  name: string;
+  capital: string;
+  districts: string[];
+  population: string;
+  majorIndustries: string[];
+}
+
+export interface AppConfig {
+  listingFee: number;
+  promotionFee: number;
+  featuredFee: number;
+  commissionRate: number;
+  isRegistrationOpen: boolean;
+  isAiEnabled: boolean;
+  adminPasswordHash: string;
+  ownerName?: string;
+  ownerTitle?: string;
+  ownerMobileNumber?: string;
+  ownerMobileOperator?: 'MTN' | 'Airtel' | 'Zamtel';
+  savedSocialChannels?: SocialChannel[];
 }
 
 export interface PlatformStats {
   totalRevenue: number;
-  adRevenue: number;
-  subscriptionRevenue: number;
-  activeAds: number;
-  totalUsers: number;
-  commissionRate: number;
-}
-
-export interface AdPlacement {
-  id: string;
-  type: 'banner' | 'sidebar' | 'interstitial';
-  title: string;
-  imageUrl: string;
-  link: string;
-  isActive: boolean;
+  activeUsers: number;
+  pendingApprovals: number;
+  dailyTransactions: number;
 }
 
 export enum AIServiceMode {
   GENERAL = 'GENERAL',
-  MAPS = 'MAPS',
   SEARCH = 'SEARCH',
-  THINKING = 'THINKING',
-  LIVE = 'LIVE'
+  THINKING = 'THINKING'
 }
 
 export interface ChatMessage {

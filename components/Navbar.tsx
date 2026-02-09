@@ -1,15 +1,16 @@
 
 import React from 'react';
-import { User } from '../types';
+import { User, AppConfig } from '../types';
 
 interface NavbarProps {
   activeView: string;
   setView: (view: 'hub' | 'marketplace' | 'services' | 'dashboard' | 'logistics' | 'admin') => void;
   user: User | null;
   onLogout: () => void;
+  config: AppConfig;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout }) => {
+const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout, config }) => {
   return (
     <nav className="bg-white/95 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-40 px-4">
       <div className="container mx-auto h-20 flex items-center justify-between">
@@ -20,8 +21,9 @@ const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout }) 
           <div className="flex flex-col -space-y-1">
             <span className="text-2xl font-black tracking-tighter text-emerald-900">ZENITH</span>
             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-orange-600 flex items-center gap-1">
-              Zambia <span className="w-2 h-px bg-gray-200"></span> SuperApp
+              AMC <span className="w-2 h-px bg-gray-200"></span> SuperApp
             </span>
+            <span className="text-[7px] font-bold text-gray-300 uppercase tracking-widest mt-0.5">By {config.ownerName}</span>
           </div>
         </div>
 

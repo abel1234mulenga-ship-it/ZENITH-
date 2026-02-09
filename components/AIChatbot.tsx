@@ -40,9 +40,13 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ onClose }) => {
       }
 
       setMessages(prev => [...prev, { role: 'model', parts: [{ text: responseText }] }]);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      setMessages(prev => [...prev, { role: 'model', parts: [{ text: "Sorry, I encountered an error processing that request." }] }]);
+      let errorText = "Sorry, I encountered an error processing that request.";
+      if (err?.message?.includes('429') || err?.status === 429) {
+        errorText = "We're experiencing high traffic right now. Please wait a moment and try your request again.";
+      }
+      setMessages(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
     } finally {
       setLoading(false);
     }
