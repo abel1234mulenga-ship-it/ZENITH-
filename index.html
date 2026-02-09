@@ -8,10 +8,20 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
     body { font-family: 'Inter', sans-serif; }
     .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
+  <script>
+    // Shim for browser environments where process.env might be accessed
+    window.process = { 
+      env: { 
+        API_KEY: '' // Will be populated by the environment or system injection
+      } 
+    };
+  </script>
 <script type="importmap">
 {
   "imports": {

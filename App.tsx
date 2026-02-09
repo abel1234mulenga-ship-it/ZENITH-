@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, User, AppConfig, Transaction, AppView } from './types';
-import Navbar from './components/Navbar';
-import Marketplace from './components/Marketplace';
-import Dashboard from './components/Dashboard';
-import LocalServices from './components/LocalServices';
-import ServiceHub from './components/ServiceHub';
-import Logistics from './components/Logistics';
-import CityNavigator from './components/CityNavigator';
-import AdminPanel from './components/AdminPanel';
-import AuthPage from './components/AuthPage';
-import { marketSearch, generateAppInvite } from './geminiService';
+import { Product, User, AppConfig, Transaction, AppView } from './types.ts';
+import Navbar from './components/Navbar.tsx';
+import Marketplace from './components/Marketplace.tsx';
+import Dashboard from './components/Dashboard.tsx';
+import LocalServices from './components/LocalServices.tsx';
+import ServiceHub from './components/ServiceHub.tsx';
+import Logistics from './components/Logistics.tsx';
+import CityNavigator from './components/CityNavigator.tsx';
+import AdminPanel from './components/AdminPanel.tsx';
+import AuthPage from './components/AuthPage.tsx';
+import ShareModal from './components/ShareModal.tsx';
+import { marketSearch } from './geminiService.ts';
 
 const INITIAL_CONFIG: AppConfig = {
   listingFee: 25,
@@ -34,7 +35,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [zambianMarkets, setZambianMarkets] = useState<any[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
-  const [isSharingApp, setIsSharingApp] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 2000);
@@ -55,29 +56,6 @@ const App: React.FC = () => {
     }
     return () => clearTimeout(timer);
   }, [config.isAiEnabled]);
-
-  const handleGlobalShare = async () => {
-    setIsSharingApp(true);
-    try {
-      const inviteText = await generateAppInvite(user?.name || 'A Zenith Merchant');
-      const finalMsg = inviteText.replace('[LINK]', window.location.href);
-      
-      if (navigator.share) {
-        await navigator.share({
-          title: 'Zenith ZM Super-App',
-          text: finalMsg,
-          url: window.location.href,
-        });
-      } else {
-        navigator.clipboard.writeText(finalMsg);
-        alert('App link copied! Blast it to your status.');
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsSharingApp(false);
-    }
-  };
 
   const handleAuth = (authUser: User) => {
     setUser(authUser);
@@ -154,7 +132,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      <Navbar activeView={view} setView={setView} user={user} onLogout={() => setUser(null)} config={config} />
+      <Navbar activeView={view} setView={setView} user={user} onLogout={() => setUser(null)} config={config} onOpenShare={() => setIsShareModalOpen(true)} />
       
       <main className="flex-grow container mx-auto px-4 py-8 pb-40 max-w-7xl">
         <div className="animate-in fade-in duration-700">
@@ -189,29 +167,25 @@ const App: React.FC = () => {
         </div>
       </main>
 
-      {/* Persistent App Credits */}
-      <div className="hidden md:block fixed bottom-6 left-6 z-[45] text-[9px] font-black uppercase tracking-[0.4em] text-gray-300">
-        Dev: {config.ownerName}
-      </div>
-
       {/* Floating Action Buttons */}
       <div className="fixed bottom-32 right-6 md:bottom-12 md:right-12 flex flex-col gap-4 z-50">
         <button 
-          onClick={handleGlobalShare}
-          disabled={isSharingApp}
+          onClick={() => setIsShareModalOpen(true)}
           className="w-16 h-16 bg-orange-500 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all border-4 border-white group relative"
         >
-          {isSharingApp ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-share-nodes text-2xl"></i>}
-          <span className="absolute right-20 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Share App</span>
+          <i className="fas fa-share-nodes text-2xl"></i>
+          <span className="absolute right-20 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Share Platform</span>
         </button>
         <button 
           onClick={() => setView('hub')} 
           className="w-20 h-20 bg-gradient-to-tr from-[#006F41] to-[#004D2D] text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all border-4 border-white group relative"
         >
           <i className="fas fa-headset text-3xl"></i>
-          <span className="absolute right-24 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Support Hub</span>
+          <span className="absolute right-24 bg-gray-900 text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition whitespace-nowrap pointer-events-none">Trade Assistant</span>
         </button>
       </div>
+
+      {isShareModalOpen && <ShareModal onClose={() => setIsShareModalOpen(false)} userName={user?.name} />}
 
       <nav className="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-3xl border-t border-gray-100 px-8 py-6 flex justify-around items-center z-40 md:hidden shadow-[0_-15px_40px_rgba(0,0,0,0.05)] rounded-t-[3.5rem]">
         {[
