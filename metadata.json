@@ -1,0 +1,9 @@
+{
+  "name": "Zenith Global Marketplace & Logistics",
+  "description": "A powerful AI-powered super-app for commerce, logistics, and real-time business intelligence.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ]
+}
