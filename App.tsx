@@ -1,13 +1,13 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, User, AppConfig, PlatformStats, Transaction } from './types';
+import { Product, User, AppConfig, Transaction, AppView } from './types';
 import Navbar from './components/Navbar';
 import Marketplace from './components/Marketplace';
 import Dashboard from './components/Dashboard';
 import LocalServices from './components/LocalServices';
 import ServiceHub from './components/ServiceHub';
 import Logistics from './components/Logistics';
-import LiveAssistant from './components/LiveAssistant';
+import CityNavigator from './components/CityNavigator';
 import AdminPanel from './components/AdminPanel';
 import AuthPage from './components/AuthPage';
 import { marketSearch } from './geminiService';
@@ -25,7 +25,7 @@ const INITIAL_CONFIG: AppConfig = {
 };
 
 const App: React.FC = () => {
-  const [view, setView] = useState<'hub' | 'marketplace' | 'services' | 'dashboard' | 'logistics' | 'admin'>('hub');
+  const [view, setView] = useState<AppView>('hub');
   const [user, setUser] = useState<User | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -134,10 +134,11 @@ const App: React.FC = () => {
       
       <main className="flex-grow container mx-auto px-4 py-8 pb-40 max-w-7xl">
         <div className="animate-in fade-in duration-700">
-          {view === 'hub' && <ServiceHub setView={setView} zambianMarkets={zambianMarkets} />}
+          {view === 'hub' && <ServiceHub setView={setView} zambianMarkets={zambianMarkets} user={user} />}
           {view === 'marketplace' && <Marketplace products={products.filter(p => p.status === 'approved')} config={config} />}
           {view === 'services' && <LocalServices />}
           {view === 'logistics' && <Logistics />}
+          {view === 'navigator' && <CityNavigator />}
           {view === 'dashboard' && (
             <Dashboard 
               user={user} 
@@ -179,7 +180,7 @@ const App: React.FC = () => {
         {[
           { id: 'hub', icon: 'fa-house-chimney', label: 'Home' },
           { id: 'marketplace', icon: 'fa-store', label: 'Trade' },
-          { id: 'logistics', icon: 'fa-truck-fast', label: 'Transit' },
+          { id: 'navigator', icon: 'fa-map-location-dot', label: 'Explore' },
           { id: 'dashboard', icon: 'fa-user-tie', label: 'Console' }
         ].map((item) => (
           <button 

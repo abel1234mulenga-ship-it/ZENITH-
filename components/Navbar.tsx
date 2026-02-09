@@ -1,16 +1,38 @@
 
 import React from 'react';
-import { User, AppConfig } from '../types';
+import { User, AppConfig, AppView } from '../types';
+import { generateAppInvite } from '../geminiService';
 
 interface NavbarProps {
-  activeView: string;
-  setView: (view: 'hub' | 'marketplace' | 'services' | 'dashboard' | 'logistics' | 'admin') => void;
+  activeView: AppView;
+  setView: (view: AppView) => void;
   user: User | null;
   onLogout: () => void;
   config: AppConfig;
 }
 
 const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout, config }) => {
+  const handleAppShare = async () => {
+    const inviteText = await generateAppInvite(user?.name || 'A Zenith User');
+    const finalMsg = inviteText.replace('[LINK]', window.location.href);
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Zenith ZM Super-App',
+          text: finalMsg,
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.error('Share failed', err);
+      }
+    } else {
+      // Fallback: Copy to clipboard
+      navigator.clipboard.writeText(finalMsg);
+      alert('Invite message copied to clipboard!');
+    }
+  };
+
   return (
     <nav className="bg-white/95 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-40 px-4">
       <div className="container mx-auto h-20 flex items-center justify-between">
@@ -31,6 +53,7 @@ const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout, co
           {[
             { id: 'hub', label: 'Hub' },
             { id: 'marketplace', label: 'Market' },
+            { id: 'navigator', label: 'Explore' },
             { id: 'logistics', label: 'Logistics' },
             { id: 'dashboard', label: 'Business' }
           ].map(item => (
@@ -47,6 +70,14 @@ const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout, co
         </div>
 
         <div className="flex items-center gap-6">
+          <button 
+            onClick={handleAppShare}
+            className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition shadow-sm border border-emerald-100"
+          >
+            <i className="fas fa-user-plus"></i>
+            Invite
+          </button>
+
           {user?.role === 'admin' && (
              <button 
               onClick={() => setView('admin')}

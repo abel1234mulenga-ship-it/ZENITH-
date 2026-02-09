@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Product, User, AppConfig, Transaction, SocialChannel } from '../types';
 import TerritoryExplorer from './TerritoryExplorer';
-import { marketSearch } from '../geminiService';
+import { marketSearch, generateViralSocialBlast } from '../geminiService';
 
 interface AdminPanelProps {
   config: AppConfig;
@@ -24,6 +24,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
   const [isWithdrawing, setIsWithdrawing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
+
+  // Social Blast State
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [blastCopy, setBlastCopy] = useState('');
+  const [isBlasting, setIsBlasting] = useState(false);
+  const [activePlatform, setActivePlatform] = useState('WhatsApp');
 
   // Social Search State
   const [socialSearch, setSocialSearch] = useState('');
@@ -64,6 +70,35 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
+  const generateBlast = async (platform: string) => {
+    if (!selectedProduct) return;
+    setIsBlasting(true);
+    setActivePlatform(platform);
+    try {
+      const copy = await generateViralSocialBlast(selectedProduct.name, selectedProduct.description, selectedProduct.price, platform);
+      setBlastCopy(copy);
+    } catch (e) {
+      alert("AI Blast failed. Retrying...");
+    } finally {
+      setIsBlasting(false);
+    }
+  };
+
+  const shareToPlatform = (platform: string) => {
+    const text = encodeURIComponent(blastCopy || `Check out ${selectedProduct?.name} on Zenith ZM! ZMW ${selectedProduct?.price}`);
+    const url = window.location.href; // Simulation
+    
+    const platforms: Record<string, string> = {
+      'WhatsApp': `https://wa.me/?text=${text}`,
+      'Facebook': `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`,
+      'Messenger': `fb-messenger://share/?link=${url}&app_id=123456789`,
+      'Instagram': `https://www.instagram.com/`,
+      'Twitter': `https://twitter.com/intent/tweet?text=${text}`,
+    };
+
+    window.open(platforms[platform], '_blank');
+  };
+
   const addSocialChannel = (source: any) => {
     const newChannel: SocialChannel = {
       id: Math.random().toString(36).substr(2, 9),
@@ -92,8 +127,8 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           {[
             { id: 'stats', label: 'Analytics', icon: 'fa-chart-pie' },
             { id: 'approvals', label: 'Queues', icon: 'fa-stamp', count: pending.length },
+            { id: 'social', label: 'Social Blast', icon: 'fa-share-nodes' },
             { id: 'territory', label: 'Territories', icon: 'fa-map' },
-            { id: 'social', label: 'Social Hub', icon: 'fa-hashtag' },
             { id: 'payouts', label: 'Payouts', icon: 'fa-wallet' },
             { id: 'settings', label: 'Config', icon: 'fa-sliders' }
           ].map(t => (
@@ -111,6 +146,131 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
           ))}
         </div>
       </header>
+
+      {activeTab === 'social' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 animate-in slide-in-from-bottom-10">
+          {/* Business Selection Panel */}
+          <div className="lg:col-span-4 space-y-6">
+             <div className="bg-white p-8 rounded-[3.5rem] shadow-xl border border-gray-100">
+                <h3 className="text-xl font-black text-gray-900 mb-6">Select Business</h3>
+                <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 no-scrollbar">
+                   {products.map(p => (
+                     <button 
+                        key={p.id}
+                        onClick={() => { setSelectedProduct(p); setBlastCopy(''); }}
+                        className={`w-full flex items-center p-4 rounded-3xl border-2 transition-all ${
+                          selectedProduct?.id === p.id ? 'bg-emerald-50 border-emerald-500' : 'bg-gray-50 border-transparent hover:border-emerald-200'
+                        }`}
+                     >
+                        <img src={p.imageUrl} className="w-12 h-12 rounded-xl object-cover mr-4" />
+                        <div className="text-left">
+                           <p className="font-black text-sm text-gray-900">{p.name}</p>
+                           <p className="text-[10px] font-black text-emerald-600 uppercase">ZMW {p.price}</p>
+                        </div>
+                     </button>
+                   ))}
+                </div>
+             </div>
+
+             <div className="bg-gray-900 p-8 rounded-[3rem] text-white space-y-4">
+                <div className="flex items-center gap-4">
+                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                      <i className="fab fa-meta"></i>
+                   </div>
+                   <p className="font-black text-sm">Meta Business Suite</p>
+                </div>
+                <p className="text-[10px] text-gray-400 font-bold leading-relaxed italic">
+                   "ZENITH ZM is granted direct API permissions to communicate with Meta Graph, WhatsApp Business, and Twitter X endpoints."
+                </p>
+                <div className="flex items-center gap-2 text-[9px] font-black text-emerald-500 uppercase tracking-widest">
+                   <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                   Permissions: GLOBAL_ALL
+                </div>
+             </div>
+          </div>
+
+          {/* Social Blast Workspace */}
+          <div className="lg:col-span-8">
+             <div className="bg-white rounded-[4.5rem] shadow-2xl border border-gray-100 p-12 h-full min-h-[600px] flex flex-col relative overflow-hidden">
+                {!selectedProduct ? (
+                   <div className="flex-grow flex flex-col items-center justify-center text-center opacity-30">
+                      <i className="fas fa-bullhorn text-8xl mb-8"></i>
+                      <h2 className="text-3xl font-black">Ready to Blast?</h2>
+                      <p className="max-w-xs mx-auto mt-4 font-bold text-lg leading-relaxed italic">"Select a business from the directory to start your global social media campaign."</p>
+                   </div>
+                ) : (
+                   <div className="space-y-10 flex-grow animate-in fade-in duration-500">
+                      <header className="flex justify-between items-center">
+                         <div>
+                            <h2 className="text-4xl font-black text-gray-900 tracking-tighter">Social Blast Hub</h2>
+                            <p className="text-emerald-600 font-black text-[10px] uppercase tracking-widest mt-1">Campaign for: {selectedProduct.name}</p>
+                         </div>
+                         <div className="flex gap-2">
+                            {['WhatsApp', 'Facebook', 'Messenger', 'Instagram', 'Twitter'].map(p => (
+                               <button 
+                                 key={p}
+                                 onClick={() => generateBlast(p)}
+                                 className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                                    activePlatform === p ? 'bg-gray-900 text-white scale-110 shadow-lg' : 'bg-gray-50 text-gray-400 hover:text-gray-900'
+                                 }`}
+                               >
+                                  <i className={`fab fa-${p.toLowerCase() === 'messenger' ? 'facebook-messenger' : p.toLowerCase() === 'twitter' ? 'x-twitter' : p.toLowerCase()}`}></i>
+                               </button>
+                            ))}
+                         </div>
+                      </header>
+
+                      <div className="bg-gray-50 rounded-[3rem] p-10 border border-gray-100 min-h-[350px] relative flex flex-col">
+                         {isBlasting ? (
+                            <div className="flex-grow flex flex-col items-center justify-center gap-6">
+                               <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+                               <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600 animate-pulse">Zenith-AI: Crafting Viral Content for {activePlatform}...</p>
+                            </div>
+                         ) : (
+                            <div className="space-y-8 flex-grow">
+                               <div className="flex justify-between items-center">
+                                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">AI-Generated {activePlatform} Post</p>
+                                  <button onClick={() => setBlastCopy('')} className="text-red-500 text-[10px] font-black uppercase hover:underline">Clear</button>
+                               </div>
+                               <textarea 
+                                 className="w-full flex-grow bg-transparent font-bold text-xl leading-relaxed text-gray-900 outline-none resize-none min-h-[250px] italic"
+                                 value={blastCopy}
+                                 onChange={(e) => setBlastCopy(e.target.value)}
+                                 placeholder="Zenith-AI is ready to generate your post. Select a platform above..."
+                               />
+                            </div>
+                         )}
+                      </div>
+
+                      <div className="pt-8 flex flex-col md:flex-row gap-6">
+                         <button 
+                           onClick={() => shareToPlatform(activePlatform)}
+                           disabled={!blastCopy}
+                           className="flex-grow py-8 bg-emerald-600 text-white rounded-[2.5rem] font-black text-xl shadow-2xl hover:bg-emerald-700 transition flex items-center justify-center gap-4 disabled:opacity-50"
+                         >
+                            <i className="fas fa-rocket"></i>
+                            Launch Campaign to {activePlatform}
+                         </button>
+                         <button 
+                            onClick={() => {
+                               navigator.clipboard.writeText(blastCopy);
+                               alert("Viral copy copied to clipboard!");
+                            }}
+                            className="px-12 py-8 bg-gray-900 text-white rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:bg-black transition"
+                         >
+                            Copy Asset
+                         </button>
+                      </div>
+                   </div>
+                )}
+                
+                <div className="absolute top-0 right-0 p-16 opacity-5 pointer-events-none">
+                   <i className="fas fa-share-nodes text-[200px]"></i>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
 
       {activeTab === 'stats' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -177,93 +337,6 @@ const AdminPanel: React.FC<AdminPanelProps> = ({
       )}
 
       {activeTab === 'territory' && <TerritoryExplorer />}
-
-      {activeTab === 'social' && (
-        <div className="space-y-10 animate-in fade-in duration-700">
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-              <div className="bg-white p-12 rounded-[4rem] shadow-2xl border border-gray-100">
-                 <h3 className="text-3xl font-black mb-8">Social Expansion Tool</h3>
-                 <div className="flex gap-4">
-                    <input 
-                      type="text" 
-                      placeholder="Search social platforms (e.g. TikTok Marketing)..." 
-                      className="flex-grow bg-gray-50 border border-gray-200 rounded-3xl px-8 py-5 font-bold outline-none focus:ring-4 focus:ring-emerald-100 transition shadow-inner"
-                      value={socialSearch}
-                      onChange={(e) => setSocialSearch(e.target.value)}
-                    />
-                    <button 
-                      onClick={handleSocialSearch}
-                      disabled={isSearchingSocial}
-                      className="bg-emerald-600 text-white px-10 py-5 rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition disabled:opacity-50"
-                    >
-                      {isSearchingSocial ? <i className="fas fa-spinner fa-spin"></i> : 'Search'}
-                    </button>
-                 </div>
-                 
-                 <div className="mt-12 space-y-4 max-h-[400px] overflow-y-auto pr-4 no-scrollbar">
-                    {socialResults.map((res, idx) => (
-                       <div key={idx} className="flex items-center justify-between p-6 bg-gray-50 rounded-[2rem] border border-gray-100 hover:bg-emerald-50 transition-colors">
-                          <div className="flex items-center gap-6">
-                             <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-600 shadow-sm border border-gray-100">
-                               <i className="fas fa-hashtag"></i>
-                             </div>
-                             <div>
-                               <p className="font-black text-gray-900">{res.web?.title || 'Platform Found'}</p>
-                               <p className="text-[10px] text-gray-400 font-bold truncate max-w-[200px]">{res.web?.uri}</p>
-                             </div>
-                          </div>
-                          <button 
-                            onClick={() => addSocialChannel(res)}
-                            className="text-[10px] font-black uppercase text-emerald-600 hover:underline"
-                          >
-                            Add Platform
-                          </button>
-                       </div>
-                    ))}
-                    {socialResults.length === 0 && !isSearchingSocial && (
-                      <div className="text-center py-20 opacity-30">
-                        <i className="fas fa-search-plus text-4xl mb-4"></i>
-                        <p className="text-xs font-black uppercase tracking-widest">Find and add marketing channels</p>
-                      </div>
-                    )}
-                 </div>
-              </div>
-
-              <div className="bg-gray-900 p-12 rounded-[4rem] text-white shadow-2xl border border-white/5 flex flex-col justify-between">
-                 <div className="space-y-10">
-                    <h3 className="text-3xl font-black tracking-tight">Active Social Network</h3>
-                    <div className="grid grid-cols-1 gap-4">
-                       {(config.savedSocialChannels || []).map(ch => (
-                         <div key={ch.id} className="flex items-center justify-between p-8 bg-white/5 rounded-[2.5rem] border border-white/10">
-                            <div className="flex items-center gap-6">
-                               <div className="w-14 h-14 bg-emerald-600/20 rounded-2xl flex items-center justify-center text-emerald-500 text-xl border border-emerald-500/30">
-                                 <i className="fab fa-instagram"></i>
-                               </div>
-                               <div>
-                                 <p className="font-black text-lg">{ch.name}</p>
-                                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Partner</p>
-                               </div>
-                            </div>
-                            <div className="text-right">
-                               <p className="text-emerald-400 font-black text-lg">Connected</p>
-                               <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Global Reach</p>
-                            </div>
-                         </div>
-                       ))}
-                       {(config.savedSocialChannels || []).length === 0 && (
-                         <div className="text-center py-20 opacity-20">
-                            <p className="text-sm font-black uppercase tracking-widest">No active channels connected</p>
-                         </div>
-                       )}
-                    </div>
-                 </div>
-                 <div className="pt-10 border-t border-white/5 text-center">
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-[0.4em]">Global Ad Presence by AMC</p>
-                 </div>
-              </div>
-           </div>
-        </div>
-      )}
 
       {activeTab === 'payouts' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 animate-in slide-in-from-bottom-6">

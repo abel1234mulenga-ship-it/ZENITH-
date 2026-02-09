@@ -42,6 +42,8 @@ export interface User {
   avatar: string;
   joinedAt: number;
   businessType?: string;
+  rating?: number;
+  totalDeals?: number;
 }
 
 export interface Transaction {
@@ -68,6 +70,32 @@ export interface ZambianProvince {
   districts: string[];
   population: string;
   majorIndustries: string[];
+}
+
+export interface City {
+  name: string;
+  lat: number;
+  lng: number;
+}
+
+export const ZAMBIAN_CITIES: City[] = [
+  { name: 'Lusaka', lat: -15.4167, lng: 28.2833 },
+  { name: 'Ndola', lat: -12.9667, lng: 28.6333 },
+  { name: 'Kitwe', lat: -12.8167, lng: 28.2 },
+  { name: 'Livingstone', lat: -17.85, lng: 25.85 },
+  { name: 'Chipata', lat: -13.6333, lng: 32.65 },
+  { name: 'Kabwe', lat: -14.4333, lng: 28.45 },
+  { name: 'Solwezi', lat: -12.1833, lng: 26.4 },
+  { name: 'Kasama', lat: -10.2128, lng: 31.1808 },
+  { name: 'Mansa', lat: -11.1997, lng: 28.8943 },
+  { name: 'Mongu', lat: -15.2484, lng: 23.1274 },
+];
+
+export interface NewsItem {
+  title: string;
+  link: string;
+  source: string;
+  time: string;
 }
 
 export interface AppConfig {
@@ -102,3 +130,5 @@ export interface ChatMessage {
   role: 'user' | 'model';
   parts: { text: string }[];
 }
+
+export type AppView = 'hub' | 'marketplace' | 'services' | 'dashboard' | 'logistics' | 'admin' | 'navigator';
