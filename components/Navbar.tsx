@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { User, AppConfig, AppView } from '../types';
 import { generateAppInvite } from '../geminiService';
 
@@ -12,25 +12,38 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout, config }) => {
+  const [isSharing, setIsSharing] = useState(false);
+
   const handleAppShare = async () => {
-    const inviteText = await generateAppInvite(user?.name || 'A Zenith User');
-    const finalMsg = inviteText.replace('[LINK]', window.location.href);
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'Zenith ZM Super-App',
-          text: finalMsg,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.error('Share failed', err);
+    setIsSharing(true);
+    try {
+      const inviteText = await generateAppInvite(user?.name || 'A Zenith User');
+      const finalMsg = inviteText.replace('[LINK]', window.location.href);
+      
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: 'Zenith ZM Super-App',
+            text: finalMsg,
+            url: window.location.href,
+          });
+        } catch (err) {
+          console.error('Share failed', err);
+          fallbackShare(finalMsg);
+        }
+      } else {
+        fallbackShare(finalMsg);
       }
-    } else {
-      // Fallback: Copy to clipboard
-      navigator.clipboard.writeText(finalMsg);
-      alert('Invite message copied to clipboard!');
+    } catch (e) {
+      alert("Sharing service temporarily unavailable.");
+    } finally {
+      setIsSharing(false);
     }
+  };
+
+  const fallbackShare = (msg: string) => {
+    navigator.clipboard.writeText(msg);
+    alert('Viral invite copied to clipboard! Share it on your WhatsApp Status or Facebook Timeline.');
   };
 
   return (
@@ -72,10 +85,11 @@ const Navbar: React.FC<NavbarProps> = ({ activeView, setView, user, onLogout, co
         <div className="flex items-center gap-6">
           <button 
             onClick={handleAppShare}
-            className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-100 transition shadow-sm border border-emerald-100"
+            disabled={isSharing}
+            className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition shadow-lg shadow-emerald-200 border border-emerald-500 disabled:opacity-50"
           >
-            <i className="fas fa-user-plus"></i>
-            Invite
+            {isSharing ? <i className="fas fa-circle-notch fa-spin"></i> : <i className="fas fa-share-nodes"></i>}
+            {isSharing ? 'Preparing...' : 'Share App'}
           </button>
 
           {user?.role === 'admin' && (
