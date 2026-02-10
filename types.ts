@@ -27,7 +27,7 @@ export interface Product {
   createdAt: number;
 }
 
-export type UserRole = 'user' | 'vendor' | 'admin';
+export type UserRole = 'user' | 'vendor' | 'admin' | 'guest';
 export type UserTier = 'free' | 'pro' | 'enterprise';
 
 export interface User {
@@ -98,6 +98,28 @@ export interface NewsItem {
   time: string;
 }
 
+// Backend Standardized Types
+export interface ApiResponse<T> {
+  status: 'success' | 'error';
+  code?: string;
+  message: string;
+  data?: T;
+}
+
+export interface Place {
+  id: string;
+  title: string;
+  category: string;
+  description?: string;
+  address: string;
+  location: { city: string; lat: number; lng: number };
+  rating: number;
+  reviews: number;
+  isOpen: boolean;
+  image: string;
+  verified?: boolean;
+}
+
 export interface AppConfig {
   listingFee: number;
   promotionFee: number;
@@ -131,4 +153,36 @@ export interface ChatMessage {
   parts: { text: string }[];
 }
 
-export type AppView = 'hub' | 'marketplace' | 'services' | 'dashboard' | 'logistics' | 'admin' | 'navigator';
+export interface ThreadMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  timestamp: number;
+  isRead: boolean;
+}
+
+export interface ChatThread {
+  id: string;
+  participants: { id: string; name: string; avatar: string }[];
+  lastMessage: string;
+  lastTimestamp: number;
+  unreadCount: number;
+  type: 'direct' | 'group' | 'business';
+  messages: ThreadMessage[];
+}
+
+export interface SocialPost {
+  id: string;
+  userId: string;
+  userName: string;
+  userAvatar: string;
+  content: string;
+  image?: string;
+  location?: string;
+  likes: number;
+  comments: number;
+  timestamp: number;
+  isPromoted?: boolean;
+}
+
+export type AppView = 'hub' | 'marketplace' | 'services' | 'dashboard' | 'logistics' | 'admin' | 'navigator' | 'chat' | 'feed';

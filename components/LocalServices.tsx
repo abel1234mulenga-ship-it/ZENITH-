@@ -1,24 +1,27 @@
 
 import React, { useState } from 'react';
-import { mapsQuery } from '../geminiService';
+import { backendService } from '../backendService';
 
 const LocalServices: React.FC = () => {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{text: string, sources: any[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSearch = async () => {
     if (!query) return;
     setLoading(true);
-    try {
-      // Mocking current location for demo
-      const res = await mapsQuery(query, { lat: 40.7128, lng: -74.006 });
-      setResult(res);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
+    setError(null);
+    
+    // Mocking current location for demo, in production use navigator.geolocation
+    const response = await backendService.fetchServices(query, { lat: 40.7128, lng: -74.006 });
+    
+    if (response.status === 'success' && response.data) {
+      setResult(response.data);
+    } else {
+      setError(response.message);
     }
+    setLoading(false);
   };
 
   return (
@@ -32,7 +35,7 @@ const LocalServices: React.FC = () => {
         <div className="flex gap-2">
           <input 
             type="text" 
-            placeholder="e.g., Best tool repair shops in Brooklyn"
+            placeholder="e.g., Best tool repair shops in Lusaka"
             className="flex-grow bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -51,7 +54,7 @@ const LocalServices: React.FC = () => {
           {['Repair Shops', 'Equipment Rental', 'Truck Logistics', 'Workshop Spaces'].map(hint => (
             <button 
               key={hint}
-              onClick={() => setQuery(`Find ${hint} nearby`)}
+              onClick={() => { setQuery(`Find ${hint} nearby`); }}
               className="text-xs bg-blue-50 text-blue-700 py-2 rounded-lg font-bold hover:bg-blue-100 transition"
             >
               {hint}
@@ -60,10 +63,16 @@ const LocalServices: React.FC = () => {
         </div>
       </div>
 
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 rounded-xl text-center text-sm font-bold border border-red-100">
+          {error}
+        </div>
+      )}
+
       {result && (
-        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 animate-fade-in">
+        <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 animate-in fade-in">
           <div className="prose max-w-none text-gray-700 mb-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Gemini's Recommendations</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Zenith Intelligence</h3>
             <div className="whitespace-pre-wrap">{result.text}</div>
           </div>
           
