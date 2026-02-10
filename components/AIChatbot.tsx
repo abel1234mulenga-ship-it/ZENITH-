@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AIServiceMode, ChatMessage } from '../types.ts';
-import { thinkingResponse, marketSearch, fastResponse, generateTTS, decodeAudio, decodeAudioData } from '../geminiService.ts';
+import { ChatMessage, AIServiceMode } from '../types.ts';
+import { proChatbotResponse, fastAIResponse, groundedSearch } from '../geminiService.ts';
 
 interface AIChatbotProps {
   onClose: () => void;
 }
 
 const AIChatbot: React.FC<AIChatbotProps> = ({ onClose }) => {
-  const [mode, setMode] = useState<AIServiceMode>(AIServiceMode.GENERAL);
+  const [mode, setMode] = useState<AIServiceMode>(AIServiceMode.THINKING);
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', parts: [{ text: "Hi! I'm your Zenith AI Assistant. How can I help you grow your tool business today?" }] }
+    { role: 'model', parts: [{ text: "Greetings. I am the Zenith Master Intelligence. I'm utilizing my high-reasoning Pro core. How can I architect your business success today?" }] }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,156 +24,113 @@ const AIChatbot: React.FC<AIChatbotProps> = ({ onClose }) => {
 
     const userMsg: ChatMessage = { role: 'user', parts: [{ text: input }] };
     setMessages(prev => [...prev, userMsg]);
+    const currentInput = input;
     setInput('');
     setLoading(true);
 
     try {
       let responseText = '';
       if (mode === AIServiceMode.THINKING) {
-        responseText = await thinkingResponse(input);
+        // Deep reasoning using Pro model with thinking tokens
+        responseText = await proChatbotResponse(messages, currentInput);
+      } else if (mode === AIServiceMode.GENERAL) {
+        // Low latency using Lite model
+        responseText = await fastAIResponse(currentInput);
       } else if (mode === AIServiceMode.SEARCH) {
-        const res = await marketSearch(input);
+        // Real-time search grounding
+        const res = await groundedSearch(currentInput);
         responseText = res.text;
-      } else {
-        responseText = await fastResponse(input);
       }
 
       setMessages(prev => [...prev, { role: 'model', parts: [{ text: responseText }] }]);
     } catch (err: any) {
       console.error(err);
-      let errorText = "Sorry, I encountered an error processing that request.";
-      if (err?.message?.includes('429') || err?.status === 429) {
-        errorText = "We're experiencing high traffic right now. Please wait a moment and try your request again.";
-      }
-      setMessages(prev => [...prev, { role: 'model', parts: [{ text: errorText }] }]);
+      setMessages(prev => [...prev, { role: 'model', parts: [{ text: "Operational error. The intelligence matrix is reset. Please try again." }] }]);
     } finally {
       setLoading(false);
     }
   };
 
-  /**
-   * Correctly play raw PCM audio data from the Gemini TTS API
-   */
-  const handleSpeak = async (text: string) => {
-    try {
-      const audioBase64 = await generateTTS(text);
-      if (audioBase64) {
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-        const decoded = decodeAudio(audioBase64);
-        const buffer = await decodeAudioData(decoded, audioCtx, 24000, 1);
-        const source = audioCtx.createBufferSource();
-        source.buffer = buffer;
-        source.connect(audioCtx.destination);
-        source.start();
-        console.debug("Playing raw PCM audio for response");
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   return (
-    <div className="flex flex-col h-full bg-white rounded-3xl shadow-2xl border border-blue-100 overflow-hidden animate-in slide-in-from-bottom-10">
-      {/* Header */}
-      <div className="p-4 bg-blue-600 text-white flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-            <i className="fas fa-sparkles"></i>
+    <div className="flex flex-col h-full bg-white rounded-[2.5rem] shadow-2xl border border-emerald-100 overflow-hidden animate-in slide-in-from-bottom-10">
+      <div className="p-6 bg-emerald-600 text-white flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
+            <i className={`fas ${mode === AIServiceMode.THINKING ? 'fa-brain' : mode === AIServiceMode.SEARCH ? 'fa-globe' : 'fa-bolt'} text-xl`}></i>
           </div>
           <div>
-            <h3 className="font-bold text-sm">Zenith Assistant</h3>
-            <div className="flex items-center space-x-1">
-              <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-              <span className="text-[10px] text-blue-100 uppercase tracking-widest font-black">AI Active</span>
-            </div>
+            <h3 className="font-black text-sm tracking-tight">Zenith AI Master</h3>
+            <p className="text-[9px] font-black uppercase tracking-widest text-emerald-100 opacity-80">
+              {mode === AIServiceMode.THINKING ? 'Pro Core Active (Reasoning)' : mode === AIServiceMode.SEARCH ? 'Search Grounding' : 'Lite Core (Low Latency)'}
+            </p>
           </div>
         </div>
-        <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-lg transition">
-          <i className="fas fa-times"></i>
-        </button>
+        <button onClick={onClose} className="w-10 h-10 hover:bg-white/10 rounded-full transition"><i className="fas fa-times"></i></button>
       </div>
 
-      {/* Mode Switcher */}
-      <div className="flex bg-gray-50 p-2 border-b border-gray-100 overflow-x-auto scrollbar-hide">
+      <div className="flex p-2 bg-gray-50 border-b border-gray-100 gap-2">
         {[
-          { id: AIServiceMode.GENERAL, icon: 'fa-bolt', label: 'Fast' },
-          { id: AIServiceMode.THINKING, icon: 'fa-brain', label: 'Think' },
-          { id: AIServiceMode.SEARCH, icon: 'fa-globe', label: 'Search' },
+          { id: AIServiceMode.THINKING, label: 'Strategy', icon: 'fa-brain' },
+          { id: AIServiceMode.SEARCH, label: 'Search', icon: 'fa-magnifying-glass' },
+          { id: AIServiceMode.GENERAL, label: 'Fast', icon: 'fa-bolt' },
         ].map(m => (
           <button 
             key={m.id}
             onClick={() => setMode(m.id as AIServiceMode)}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap mr-2 ${
-              mode === m.id ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200'
+            className={`flex-grow flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+              mode === m.id ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-gray-400 border border-gray-100 hover:border-emerald-200'
             }`}
           >
-            <i className={`fas ${m.icon}`}></i>
-            <span>{m.label}</span>
+            <i className={`fas ${m.icon}`}></i> {m.label}
           </button>
         ))}
       </div>
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-50/50">
+      <div ref={scrollRef} className="flex-grow p-6 overflow-y-auto space-y-6 bg-gray-50/30">
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            <div className={`max-w-[85%] p-4 rounded-2xl relative group ${
+            <div className={`max-w-[85%] p-5 rounded-[2rem] shadow-sm ${
               msg.role === 'user' 
-              ? 'bg-blue-600 text-white rounded-tr-none' 
-              : 'bg-white text-gray-800 shadow-sm border border-gray-100 rounded-tl-none'
+              ? 'bg-emerald-600 text-white rounded-tr-none' 
+              : 'bg-white text-gray-800 border border-emerald-50 rounded-tl-none font-medium'
             }`}>
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.parts[0].text}</p>
-              {msg.role === 'model' && (
-                <button 
-                  onClick={() => handleSpeak(msg.parts[0].text)}
-                  className="absolute -right-10 top-2 opacity-0 group-hover:opacity-100 transition p-2 text-blue-600 hover:scale-110"
-                >
-                  <i className="fas fa-volume-up"></i>
-                </button>
-              )}
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</p>
             </div>
           </div>
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex space-x-1">
-              <div className="w-2 h-2 bg-blue-300 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce [animation-delay:0.2s]"></div>
-              <div className="w-2 h-2 bg-blue-600 rounded-full animate-bounce [animation-delay:0.4s]"></div>
+            <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-emerald-50 flex items-center gap-3">
+              <div className="flex gap-1">
+                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                <span className="w-1.5 h-1.5 bg-emerald-600 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+              </div>
+              <p className="text-[9px] font-black uppercase tracking-widest text-emerald-600">Synthesizing...</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Input */}
-      <div className="p-4 bg-white border-t border-gray-100">
-        <div className="flex bg-gray-50 border border-gray-200 rounded-2xl px-4 py-1 items-center">
-          <textarea 
-            rows={1}
-            placeholder={mode === AIServiceMode.THINKING ? "Ask a complex business question..." : "Ask me anything..."}
-            className="flex-grow bg-transparent outline-none py-3 text-sm resize-none"
+      <div className="p-6 bg-white border-t border-gray-100">
+        <div className="flex bg-gray-50 border border-gray-200 rounded-[2rem] px-6 py-2 items-center focus-within:ring-4 focus-within:ring-emerald-50 transition-all">
+          <input 
+            placeholder={mode === AIServiceMode.THINKING ? "Ask for a complex business plan..." : "How can I help?"}
+            className="flex-grow bg-transparent outline-none py-4 text-sm font-bold"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
           />
           <button 
             onClick={handleSend}
             disabled={!input.trim() || loading}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition ${
-              input.trim() ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-300'
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+              input.trim() && !loading ? 'bg-emerald-600 text-white shadow-xl hover:scale-110' : 'bg-gray-200 text-gray-400'
             }`}
           >
-            <i className={`fas ${loading ? 'fa-spinner fa-spin' : 'fa-paper-plane'}`}></i>
+            <i className={`fas ${loading ? 'fa-circle-notch fa-spin' : 'fa-paper-plane'}`}></i>
           </button>
         </div>
-        <p className="text-[10px] text-gray-400 mt-2 text-center uppercase tracking-widest font-bold">
-          Powered by Gemini 3.0 Pro & Flash
-        </p>
       </div>
     </div>
   );

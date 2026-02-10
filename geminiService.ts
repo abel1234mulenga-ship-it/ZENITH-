@@ -1,10 +1,9 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 
-// Standard client initialization as per guidelines
+// Standard client initialization
 const getAIClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
-// Exponential backoff retry logic for robust API interactions
 async function withRetry<T>(fn: () => Promise<T>, retries = 5, initialDelay = 3000): Promise<T> {
   let currentDelay = initialDelay;
   for (let i = 0; i < retries; i++) {
@@ -26,62 +25,36 @@ async function withRetry<T>(fn: () => Promise<T>, retries = 5, initialDelay = 30
 }
 
 /**
- * Compares multiple products for strategic business decisions
+ * Powerful Pro Chatbot with Advanced Reasoning
+ * Uses gemini-3-pro-preview with thinkingConfig
  */
-export const compareProductsAI = async (products: any[]) => {
+export const proChatbotResponse = async (history: any[], currentMessage: string) => {
   return withRetry(async () => {
     const ai = getAIClient();
-    const productDetails = products.map(p => `${p.name} (ZMW ${p.price}): ${p.description}`).join('\n---\n');
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
-      contents: `Perform a professional commercial comparison of these Zambian market assets:\n\n${productDetails}\n\nProvide:
-      1. Key Value Difference.
-      2. Recommended choice for a budget buyer vs a quality seeker.
-      3. Potential ROI estimation for the Zambian market.
-      Keep the tone highly professional and strategic.`
-    });
-    return response.text || 'Unable to generate comparison at this time.';
-  });
-};
-
-/**
- * Generates a viral app invitation message localized for Zambia
- */
-export const generateAppInvite = async (userName: string) => {
-  return withRetry(async () => {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Create a viral, short, and exciting WhatsApp/Facebook invitation for the "Zenith ZM" super-app. 
-      Sender: ${userName}. 
-      Key Features: AI Business tools, Smart Logistics, and a 10-province Marketplace. 
-      Tone: High-energy, localized Zambian slang (Zed, Kwasila, Ba Boss), and highly persuasive. 
-      Include 3 fire emojis and a placeholder [LINK] for the app URL.`
-    });
-    return response.text || '';
-  });
-};
-
-/**
- * Generates viral social media blast content for Zambian platforms
- */
-export const generateViralSocialBlast = async (businessName: string, description: string, price: number, platform: string) => {
-  return withRetry(async () => {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Act as a world-class Zambian marketing agency. Generate a VIRAL ${platform} post for: ${businessName}. 
-      Product: ${description}. 
-      Price: ZMW ${price}. 
-      Target Audience: Zambians looking for quality and value. 
-      Tone: Catchy, professional yet localized. 
-      Include: 
-      - Local Zambian slang where appropriate (e.g., 'Zed', 'Ba Boss', 'Pabwalo').
-      - Strategic Emojis.
-      - 5 high-traffic Zambian hashtags.
-      - A strong Call to Action.`,
+      contents: [...history, { role: 'user', parts: [{ text: currentMessage }] }],
       config: {
-        systemInstruction: "You are Zenith-AI, the expert marketing bot for the Zenith ZM super-app."
+        thinkingConfig: { thinkingBudget: 32768 },
+        systemInstruction: "You are the Zenith ZM Master AI. You help users with complex business strategies, trade logistics, and Zambian market analysis. Be detailed, strategic, and professional."
+      }
+    });
+    return response.text || 'Thinking... session interrupted.';
+  });
+};
+
+/**
+ * Fast AI Responses
+ * Uses gemini-flash-lite-latest for low-latency interactions
+ */
+export const fastAIResponse = async (query: string) => {
+  return withRetry(async () => {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-flash-lite-latest',
+      contents: query,
+      config: {
+        systemInstruction: "You are a fast, concise business assistant. Provide short, actionable answers instantly."
       }
     });
     return response.text || '';
@@ -89,21 +62,49 @@ export const generateViralSocialBlast = async (businessName: string, description
 };
 
 /**
- * Fetches predictive logistics intelligence for Zambian routes
+ * Search Grounding for Up-to-Date Information
+ * Uses gemini-3-flash-preview with googleSearch tool
  */
-export const fetchLogisticsIntel = async (origin: string, destination: string, cargoType: string) => {
+export const groundedSearch = async (query: string) => {
   return withRetry(async () => {
     const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Analyze a logistics route from ${origin} to ${destination} in Zambia for ${cargoType}. Provide: 
-      1. Estimated travel time considering current typical road conditions.
-      2. Potential road risks (e.g., weighbridges, construction zones).
-      3. Best vehicle recommendation.
-      4. A 'Smart Score' (1-100) for route efficiency.`,
-      config: { tools: [{ googleSearch: {} }] }
+      contents: query,
+      config: {
+        tools: [{ googleSearch: {} }]
+      }
     });
-    return response.text || 'Logistics data currently offline.';
+    return {
+      text: response.text || '',
+      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
+    };
+  });
+};
+
+/**
+ * Maps Grounding for Spatial Accuracy
+ * Uses gemini-2.5-flash with googleMaps tool
+ */
+export const groundedMapsQuery = async (query: string, lat: number, lng: number) => {
+  return withRetry(async () => {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: query,
+      config: {
+        tools: [{ googleMaps: {} }],
+        toolConfig: {
+          retrievalConfig: {
+            latLng: { latitude: lat, longitude: lng }
+          }
+        }
+      }
+    });
+    return {
+      text: response.text || '',
+      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
+    };
   });
 };
 
@@ -118,53 +119,9 @@ export const analyzeImage = async (base64Data: string, mimeType: string) => {
       contents: {
         parts: [
           { inlineData: { data: base64Data, mimeType } },
-          { text: "Analyze this commercial asset for the Zambian market. Provide the suggested Category, an estimated value in ZMW, and a detailed description." }
+          { text: "Analyze this commercial asset for the Zambian market. Provide suggested Category, estimated value in ZMW, and a detailed description." }
         ]
       }
-    });
-    return response.text || '';
-  });
-};
-
-/**
- * Fetches latest Zambian economic news using search grounding
- */
-export const fetchZambianNews = async () => {
-  return withRetry(async () => {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: "List the top 5 latest business, trade, or economic news headlines in Zambia today. Focus on commercial impact. Return a JSON array with 'title', 'source', and 'link'.",
-      config: { 
-        tools: [{ googleSearch: {} }],
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.ARRAY,
-          items: {
-            type: Type.OBJECT,
-            properties: {
-              title: { type: Type.STRING },
-              source: { type: Type.STRING },
-              link: { type: Type.STRING }
-            }
-          }
-        }
-      }
-    });
-    return JSON.parse(response.text || '[]');
-  });
-};
-
-/**
- * Lists businesses near a specific landmark using search
- */
-export const fetchNearbyBusinesses = async (buildingName: string) => {
-  return withRetry(async () => {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `List active businesses, banks, or retail shops located inside or immediately adjacent to ${buildingName} in Zambia.`,
-      config: { tools: [{ googleSearch: {} }] }
     });
     return response.text || '';
   });
@@ -179,117 +136,97 @@ export const generatePromoVideo = async (prompt: string, onProgress?: (msg: stri
     onProgress?.("Initializing Veo 3.1 Fast Engine...");
     let operation = await ai.models.generateVideos({
       model: 'veo-3.1-fast-generate-preview',
-      prompt: `A high-end cinematic commercial for ${prompt}. Professional lighting, 4k quality, vibrant colors.`,
+      prompt: `A cinematic trade advertisement for: ${prompt}`,
       config: { numberOfVideos: 1, resolution: '720p', aspectRatio: '16:9' }
     });
     while (!operation.done) {
       await new Promise(resolve => setTimeout(resolve, 8000));
       operation = await ai.operations.getVideosOperation({ operation: operation });
-      if (!operation.done) onProgress?.("Synthesizing cinematic layers...");
+      if (!operation.done) onProgress?.("Rendering commercial assets...");
     }
-    return `${operation.response?.generatedVideos?.[0]?.video?.uri}&key=${process.env.API_KEY}`;
+    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+    return `${downloadLink}&key=${process.env.API_KEY}`;
   });
 };
 
 /**
- * Generates localized social media ad copy (Required by Dashboard.tsx)
+ * Generates viral ad copy for a product
  */
 export const generateSocialAd = async (name: string, description: string, price: number) => {
   return withRetry(async () => {
     const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Generate 3 localized Zambian social media ad copies (Facebook, WhatsApp, Instagram) for: ${name}. Description: ${description}. Price: ZMW ${price}. Include relevant Zambian slang like 'Zed', 'Kwasila', or 'Chalo' to make it authentic and engaging.`
+      contents: `Generate viral Zambian ad copy for: ${name}. ${description}. Price: ZMW ${price}.`
     });
     return response.text || '';
   });
 };
 
 /**
- * Provides deep market strategy using Pro model and search (Required by Dashboard.tsx)
+ * Generates market strategy using grounded search
  */
 export const generateMarketStrategy = async (name: string, category: string) => {
-  return withRetry(async () => {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: `Perform a detailed market entry and competitive strategy analysis for ${name} in the Zambian ${category} sector. Include current 2024 trends, local demand drivers, and pricing benchmarks.`,
-      config: {
-        tools: [{ googleSearch: {} }]
-      }
-    });
-    return {
-      text: response.text || '',
-      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
-    };
-  });
+  return groundedSearch(`Detailed 2024 Zambian market strategy for starting a business in ${category}, specifically focused on ${name}.`);
 };
 
 /**
- * General market search with grounding
+ * Fetches Zambian business news using grounded search
  */
-export const marketSearch = async (query: string) => {
+export const fetchZambianNews = async () => {
   return withRetry(async () => {
     const ai = getAIClient();
+    // Using gemini-3-flash-preview for news fetching with grounded search
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: query,
-      config: { tools: [{ googleSearch: {} }] }
-    });
-    return {
-      text: response.text || '',
-      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
-    };
-  });
-};
-
-/**
- * Maps-specific grounding queries using Gemini 2.5
- */
-export const mapsQuery = async (query: string, location: { lat: number, lng: number }) => {
-  const ai = getAIClient();
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: query,
-    config: {
-      tools: [{ googleMaps: {} }],
-      toolConfig: { retrievalConfig: { latLng: { latitude: location.lat, longitude: location.lng } } }
-    },
-  });
-  return {
-    text: response.text || '',
-    sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
-  };
-};
-
-/**
- * Complex reasoning response using Thinking Budget (Required by AIChatbot.tsx)
- */
-export const thinkingResponse = async (query: string) => {
-  return withRetry(async () => {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
-      contents: query,
-      config: {
-        thinkingConfig: { thinkingBudget: 32768 }
+      contents: "Top 5 Zambian business and economic news headlines for today.",
+      config: { 
+        tools: [{ googleSearch: {} }],
       }
     });
-    return response.text || '';
+    
+    // We try to extract news items from the grounded text manually using a second AI call for JSON structure
+    const text = response.text || '';
+    const jsonResponse = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Extract the following news items into a JSON array of objects with 'title', 'source', and 'link' properties: ${text}`,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              source: { type: Type.STRING },
+              link: { type: Type.STRING }
+            }
+          }
+        }
+      }
+    });
+    return JSON.parse(jsonResponse.text || '[]');
   });
 };
 
 /**
- * Lightweight fast response for chat
+ * Fetches businesses near a building in Zambia
  */
-export const fastResponse = async (query: string) => {
-  const ai = getAIClient();
-  const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: query });
-  return response.text || '';
+export const fetchNearbyBusinesses = async (buildingName: string) => {
+  const res = await groundedMapsQuery(`List all businesses and services located in or around ${buildingName} in Zambia.`, -15.4167, 28.2833);
+  return res.text;
 };
 
 /**
- * Generates audio for text-to-speech
+ * Fetches logistics information between two points in Zambia
+ */
+export const fetchLogisticsIntel = async (origin: string, destination: string, cargoType: string) => {
+  const res = await groundedSearch(`Typical travel time, road conditions, and security risks between ${origin} and ${destination} in Zambia for ${cargoType}.`);
+  return res.text;
+};
+
+/**
+ * Generates speech from text
  */
 export const generateTTS = async (text: string) => {
   const ai = getAIClient();
@@ -305,17 +242,68 @@ export const generateTTS = async (text: string) => {
 };
 
 /**
- * Helper to encode audio bytes to base64
+ * Compares products using AI
  */
+export const compareProductsAI = async (products: any[]) => {
+  return withRetry(async () => {
+    const ai = getAIClient();
+    const prompt = `Compare these Zambian commercial assets and provide a strategic recommendation: ${JSON.stringify(products)}`;
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+    });
+    return response.text || '';
+  });
+};
+
+/**
+ * Generates a viral app invite message
+ */
+export const generateAppInvite = async (userName: string) => {
+  return withRetry(async () => {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Generate a short, viral WhatsApp invite message for Zenith ZM trade super-app. Recommended by ${userName}. Include placeholder [LINK].`,
+    });
+    return response.text || '';
+  });
+};
+
+/**
+ * Alias for groundedSearch
+ */
+export const marketSearch = async (query: string) => {
+  return groundedSearch(query);
+};
+
+/**
+ * Alias for groundedMapsQuery with coordinates object
+ */
+export const mapsQuery = async (query: string, coords: { lat: number, lng: number }) => {
+  return groundedMapsQuery(query, coords.lat, coords.lng);
+};
+
+/**
+ * Generates viral ad copy for a specific platform
+ */
+export const generateViralSocialBlast = async (name: string, description: string, price: number, platform: string) => {
+  return withRetry(async () => {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Generate a viral ${platform} post for ${name} in Zambia. Price: ZMW ${price}. Description: ${description}`,
+    });
+    return response.text || '';
+  });
+};
+
 export const encodeAudio = (bytes: Uint8Array) => {
   let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
   return btoa(binary);
 };
 
-/**
- * Helper to decode base64 to audio bytes
- */
 export const decodeAudio = (base64: string) => {
   const binaryString = atob(base64);
   const bytes = new Uint8Array(binaryString.length);
@@ -323,9 +311,6 @@ export const decodeAudio = (base64: string) => {
   return bytes;
 };
 
-/**
- * Utility to decode raw PCM audio data into an AudioBuffer
- */
 export async function decodeAudioData(data: Uint8Array, ctx: AudioContext, sampleRate: number, numChannels: number): Promise<AudioBuffer> {
   const dataInt16 = new Int16Array(data.buffer);
   const frameCount = dataInt16.length / numChannels;
