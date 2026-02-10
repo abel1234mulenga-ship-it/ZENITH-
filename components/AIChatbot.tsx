@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatMessage, AIServiceMode } from '../types.ts';
-import { proChatbotResponse, fastAIResponse, groundedSearch } from '../geminiService.ts';
+import { ChatMessage, AIServiceMode } from '../types';
+import { proChatbotResponse, fastAIResponse, groundedSearch } from '../geminiService';
 
 interface AIChatbotProps {
   onClose: () => void;

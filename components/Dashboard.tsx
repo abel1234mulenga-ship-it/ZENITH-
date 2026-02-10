@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { Product, User, AppConfig } from '../types.ts';
-import { analyzeImage, generatePromoVideo, generateSocialAd, generateMarketStrategy } from '../geminiService.ts';
+import { Product, User, AppConfig } from '../types';
+import { analyzeImage, generatePromoVideo, generateSocialAd, generateMarketStrategy } from '../geminiService';
 
 interface DashboardProps {
   user: User;

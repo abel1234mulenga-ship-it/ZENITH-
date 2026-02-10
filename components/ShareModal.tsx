@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { generateAppInvite } from '../geminiService.ts';
+import { generateAppInvite } from '../geminiService';
 
 interface ShareModalProps {
   onClose: () => void;

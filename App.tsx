@@ -1,20 +1,20 @@
 
 import React, { useState, useEffect } from 'react';
-import { Product, User, AppConfig, Transaction, AppView } from './types.ts';
-import Navbar from './components/Navbar.tsx';
-import Marketplace from './components/Marketplace.tsx';
-import Dashboard from './components/Dashboard.tsx';
-import LocalServices from './components/LocalServices.tsx';
-import ServiceHub from './components/ServiceHub.tsx';
-import Logistics from './components/Logistics.tsx';
-import CityNavigator from './components/CityNavigator.tsx';
-import AdminPanel from './components/AdminPanel.tsx';
-import AuthPage from './components/AuthPage.tsx';
-import ShareModal from './components/ShareModal.tsx';
-import AIChatbot from './components/AIChatbot.tsx';
-import UserChat from './components/UserChat.tsx';
-import SocialFeed from './components/SocialFeed.tsx';
-import { groundedSearch } from './geminiService.ts';
+import { Product, User, AppConfig, Transaction, AppView } from './types';
+import Navbar from './components/Navbar';
+import Marketplace from './components/Marketplace';
+import Dashboard from './components/Dashboard';
+import LocalServices from './components/LocalServices';
+import ServiceHub from './components/ServiceHub';
+import Logistics from './components/Logistics';
+import CityNavigator from './components/CityNavigator';
+import AdminPanel from './components/AdminPanel';
+import AuthPage from './components/AuthPage';
+import ShareModal from './components/ShareModal';
+import AIChatbot from './components/AIChatbot';
+import UserChat from './components/UserChat';
+import SocialFeed from './components/SocialFeed';
+import { groundedSearch } from './geminiService';
 
 const INITIAL_CONFIG: AppConfig = {
   listingFee: 25,

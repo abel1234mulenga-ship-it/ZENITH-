@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
-import { ZambianProvince } from '../types.ts';
-import { marketSearch } from '../geminiService.ts';
+import { ZambianProvince } from '../types';
+import { marketSearch } from '../geminiService';
 
 const ZAMBIA_PROVINCES: ZambianProvince[] = [
   { name: 'Central', capital: 'Kabwe', districts: ['Kabwe', 'Chibombo', 'Kushi', 'Mkushi', 'Mumbwa', 'Serenje'], population: '1.5M', majorIndustries: ['Mining', 'Agriculture'] },

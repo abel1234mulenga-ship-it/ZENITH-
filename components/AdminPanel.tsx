@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { Product, User, AppConfig, Transaction, SocialChannel } from '../types.ts';
-import TerritoryExplorer from './TerritoryExplorer.tsx';
-import { marketSearch } from '../geminiService.ts'; // Keeping this for the TerritoryExplorer specific logic if not moved yet
-import { backendService } from '../backendService.ts';
+import { Product, User, AppConfig, Transaction, SocialChannel } from '../types';
+import TerritoryExplorer from './TerritoryExplorer';
+import { marketSearch } from '../geminiService'; 
+import { backendService } from '../backendService';
 
 interface AdminPanelProps {
   config: AppConfig;

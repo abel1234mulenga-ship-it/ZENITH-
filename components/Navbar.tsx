@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { User, AppConfig, AppView } from '../types.ts';
+import { User, AppConfig, AppView } from '../types';
 
 interface NavbarProps {
   activeView: AppView;

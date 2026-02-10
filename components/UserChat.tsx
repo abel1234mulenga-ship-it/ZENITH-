@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { ChatThread, User } from '../types.ts';
-import { backendService } from '../backendService.ts';
+import { ChatThread, User } from '../types';
+import { backendService } from '../backendService';
 
 interface UserChatProps {
   currentUser: User;

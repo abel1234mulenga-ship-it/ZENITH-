@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Product, ZAMBIAN_CITIES, City } from '../types.ts';
-import { compareProductsAI } from '../geminiService.ts';
+import { Product, ZAMBIAN_CITIES, City } from '../types';
+import { compareProductsAI } from '../geminiService';
 
 interface MarketplaceProps {
   products: Product[];

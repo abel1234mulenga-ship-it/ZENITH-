@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { fetchLogisticsIntel } from '../geminiService.ts';
+import { fetchLogisticsIntel } from '../geminiService';
 
 const Logistics: React.FC = () => {
   const [vehicle, setVehicle] = useState('cargo');

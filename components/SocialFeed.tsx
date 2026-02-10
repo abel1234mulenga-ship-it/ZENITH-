@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { SocialPost, User } from '../types.ts';
-import { backendService } from '../backendService.ts';
+import { SocialPost, User } from '../types';
+import { backendService } from '../backendService';
 
 interface SocialFeedProps {
   user: User;
